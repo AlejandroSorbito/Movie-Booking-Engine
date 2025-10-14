@@ -4,7 +4,7 @@
 
 A Movie Booking Engine project for CC-206 - Application Development and Emerging Technologies
 
-<ul>
+<ul><h2>Group Members:</h2>
 <li>Sorbito, Alejandro Matthew</li>
 <li>Tacsagon, King Philip</li>
 <li>Tuvilla, Ilych John Edward</li>
