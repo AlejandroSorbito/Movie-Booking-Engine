@@ -1,3 +1,10 @@
 # Movie-Booking-Engine
 A Movie Booking Engine project for CC-206 - Application Development and Emerging Technologies
-<h1 style="color: blue;">Movie Booking Engine</h1>
+
+<p style="color: blue;">Group Members:
+<ul>
+<li>Sorbito, Alejandro Matthew</li>
+<li>Tacsagon, King Philip</li>
+<li>Tuvilla, Ilych John Edward</li>
+</ul>
+</p>
