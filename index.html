@@ -8,7 +8,9 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #111;
+      background: url(images/bg.jpg);
+      background-size: cover;
+      background-position: center;
       color: #fff;
       display: flex;
       flex-direction: column;
@@ -17,14 +19,19 @@
       height: 100vh;
       text-align: center;
     }
+
     h1 {
       font-size: 48px;
       margin-bottom: 10px;
+      color: #e29397;
     }
+
     p {
       font-size: 20px;
       margin-bottom: 20px;
+      color: #e29397;
     }
+
     a {
       text-decoration: none;
       background-color: #e50914;
@@ -34,12 +41,55 @@
       font-weight: bold;
       transition: background-color 0.3s;
     }
+
     a:hover {
       background-color: #b00610;
     }
+
+    nav {
+      position: absolute;
+      top: 20px;
+      right: 20px; /* moves the nav bar to the upper right corner */
+      display: flex;
+      gap: 20px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #ffcc00;
+    }
+    nav a.login-link {
+  color: #fdffff; 
+    background-color: #b5cf21;
+  font-weight: bold;
+  padding: 15px 20px; 
+  font-size: 13px;
+  font-weight: bold;
+    }
+    nav a.login-link:hover {
+  color: #ffcc00;}
   </style>
 </head>
 <body>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">About / Company Info</a>
+    <a href="#">Services / Products</a>
+    <a href="#">Contact</a>
+    <a href="#">FAQs / Help</a>
+    <a href="#" class="login-link">Login / Sign Up</a>
+  </nav>
+
   <h1>Welcome to Cinema</h1>
   <p>Book your movies now and enjoy the experience!</p>
   <a href="#">Book Now</a>
