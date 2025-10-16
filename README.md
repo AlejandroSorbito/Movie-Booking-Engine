@@ -5,7 +5,7 @@
 A Movie Booking Engine project for CC-206 - Application Development and Emerging Technologies
 
 <ul><h2>Group Members:</h2>
-<li><img src="assets/images/Sorbito.jpg" alt="White Asian">Sorbito, Alejandro Matthew</li>
+<li><img src="assets/images/Sorbito.jpg" width= "2in" height= "2in" alt="White Asian">Sorbito, Alejandro Matthew</li>
 <li>Tacsagon, King Philip</li>
 <li>Tuvilla, Ilych John Edward</li>
 </ul>
