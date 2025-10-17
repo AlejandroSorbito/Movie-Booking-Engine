@@ -22,7 +22,6 @@ A Movie Booking Engine project for CC-206 - Application Development and Emerging
   </tr>
 </table>
 
-
 <h2>🔑 Key Features:</h2>
 <ul>
 <li>**Manage Movies** – Add, edit, or delete movie details such as title, genre, duration, and synopsis.</li>
