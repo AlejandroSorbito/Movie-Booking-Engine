@@ -7,7 +7,7 @@ A Movie Booking Engine project for CC-206 - Application Development and Emerging
 <h2>Group Members:</h2>
 <p align="center">
   <div style="display:inline-block; text-align:center; margin:10px;">
-    <img src="assets/images/Sorbito.jpg" alt="Alejandro Matthew Sorbito" width="150" style="border-radius:10px;"><br>
+    <img src="assets/images/sorbito.jpg" alt="Alejandro Matthew Sorbito" width="150" style="border-radius:10px;"><br>
     <strong>Alejandro Matthew Sorbito</strong>
   </div>
 
@@ -21,6 +21,7 @@ A Movie Booking Engine project for CC-206 - Application Development and Emerging
     <strong>Ilych John Edward Tuvilla</strong>
   </div>
 </p>
+
 
 <h2>🔑 Key Features:</h2>
 <ul><li><bold>Manage Movies</bold> – Add, edit, or delete movie details such as title, genre, duration, and synopsis.</li>
