@@ -1,11 +1,30 @@
-<p align="center"><img src="images/Banner.png" width="900" alt="Movie Booking Engine banner"></p>
+<p align="center"><img src="assets/images/Banner.png" width="900" alt="Movie Booking Engine banner"></p>
 
 # Movie-Booking-Engine
 
 A Movie Booking Engine project for CC-206 - Application Development and Emerging Technologies
 
-<ul><h2>Group Members:</h2>
-<li>Sorbito, Alejandro Matthew</li>
-<li>Tacsagon, King Philip</li>
-<li>Tuvilla, Ilych John Edward</li>
+<h2>Group Members:</h2>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="assets/images/Sorbito.jpg" alt="Alejandro Matthew Sorbito" width="150" style="border-radius:10px;"><br>
+      <strong>Alejandro Matthew Sorbito</strong>
+    </td>
+    <td align="center">
+      <img src="assets/images/Tacsagon.jpg" alt="King Philip Tacsagon" width="150" style="border-radius:10px;"><br>
+      <strong>King Philip Tacsagon</strong>
+    </td>
+    <td align="center">
+      <img src="assets/images/Tuvilla.jpg" alt="Ilych John Edward Tuvilla" width="150" style="border-radius:10px;"><br>
+      <strong>Ilych John Edward Tuvilla</strong>
+    </td>
+  </tr>
+</table>
+
+<h2>🔑 Key Features:</h2>
+<ul>
+<li>Manage Movies – Add, edit, or delete movie details such as title, genre, duration, and synopsis.</li>
+<li>Schedule Screenings – Set movie showtimes, dates, and assign them to specific cinemas.</li>
+<li>Manage Bookings – View and monitor all customer reservations and ticket statuses.</li>
 </ul>
