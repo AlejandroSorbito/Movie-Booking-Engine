@@ -1,11 +1,15 @@
 /* style.css - Shared styles for BookBuster site (dark cinematic theme) */
 * { margin:0; padding:0; box-sizing: border-box; font-family: Arial, sans-serif; }
 body {
-  background: linear-gradient(120deg, #0f0f0f 0%, #1b1b1b 50%, #0b0b0b 100%),
-  url(assets/images/bg.jpg) ;
+  background: 
+    linear-gradient(120deg, rgba(15, 15, 15, 0.8) 0%, rgba(27, 27, 27, 0.8) 50%, rgba(11, 11, 11, 0.8) 100%),
+    url(assets/images/bg.jpg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #fff;
   text-align: center;
-  min-height:100vh;
+  min-height: 100vh;
 }
 nav {
   position: absolute;
