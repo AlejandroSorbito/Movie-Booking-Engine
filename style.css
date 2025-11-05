@@ -113,15 +113,6 @@ a.btn:hover {
   transition: transform 0.18s, box-shadow 0.18s;
 }
 
-.feature img {
-  width: 100px;       /* control poster size */
-  height: auto;       /* keeps proportions */
-  border-radius: 10px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-
 .feature:hover {
   transform: translateY(-6px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
@@ -133,6 +124,17 @@ a.btn:hover {
   color: #ffcc00;
   display: block;
 }
+
+.feature i img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto 12px;
+  object-fit: cover;
+  max-height: 280px;
+}
+
 
 .feature h3 {
   margin: 8px 0;
