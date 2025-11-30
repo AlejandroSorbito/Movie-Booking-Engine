@@ -5,22 +5,28 @@
   font-family: Arial, sans-serif;
 }
 
-   body {
-     background:
-       linear-gradient(
-         120deg,
-         rgba(15, 15, 15, 0.8) 0%,
-         rgba(27, 27, 27, 0.8) 50%,
-         rgba(11, 11, 11, 0.8) 100%
-       ),
-       url('https://raw.githubusercontent.com/AlejandroSorbito/BookBuster/main/assets/images/bg.jpg');  /* Full GitHub raw URL */
-     background-size: cover;
-     background-position: center;
-     background-repeat: no-repeat;
-     color: #fff;
-     text-align: center;
-     min-height: 100vh;
-   }
+/* --- THE MAIN BODY SETUP --- */
+body {
+  /* Flexbox Magic: This pushes the footer down! */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Takes up at least 100% of the screen height */
+
+  background:
+    linear-gradient(
+      120deg,
+      rgba(15, 15, 15, 0.8) 0%,
+      rgba(27, 27, 27, 0.8) 50%,
+      rgba(11, 11, 11, 0.8) 100%
+    ),
+    url('https://raw.githubusercontent.com/AlejandroSorbito/BookBuster/main/assets/images/bg.jpg'); /* My Background Image from GitHub */
+    
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+  text-align: center;
+}
 
 nav {
   position: absolute;
@@ -149,13 +155,16 @@ a.btn:hover {
   margin: 0 auto;
 }
 
+/* --- FOOTER SECTION --- */
 footer {
+  /* This margin-top: auto combined with flex body keeps me at the bottom! */
+  margin-top: auto; 
   background: rgba(0, 0, 0, 0.6);
   padding: 18px 6%;
   color: #ddd;
-  margin-top: 30px;
 }
 
+/* --- FORM STYLES (For Login & Dashboard) --- */
 form input,
 form textarea {
   width: 100%;
@@ -176,10 +185,9 @@ form button {
   cursor: pointer;
 }
 
-/* Added styling for the error message div */
 #errorMessage {
-  color: #ff6b6b; /* Softer red that fits the theme */
-  background: rgba(255, 107, 107, 0.1); /* Light red background for subtle visibility */
+  color: #ff6b6b; 
+  background: rgba(255, 107, 107, 0.1); 
   padding: 8px;
   border-radius: 6px;
   margin-top: 10px;
