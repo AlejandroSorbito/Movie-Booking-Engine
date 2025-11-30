@@ -78,10 +78,13 @@
     import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // 1. Auth Check (The Security Gate)
+// 1. Auth Check (The Security Gate)
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-          // If not logged in, kick them out immediately
+          // BREAK THE LOOP: Clear the flag that says we are logged in
+          localStorage.removeItem('userLoggedIn'); 
+          
+          // Then kick them out
           window.location.href = "login.html";
       } else {
           // If logged in, NOW we show the page
