@@ -9,28 +9,49 @@
       .seat-grid {
           display: grid;
           grid-template-columns: repeat(8, 1fr); /* 8 seats per row */
-          gap: 10px;
+          gap: 8px;
           margin: 20px 0;
           max-width: 400px;
       }
       .seat {
-          width: 35px;
           height: 35px;
           background: #444;
-          border-radius: 5px;
-          border: none;
+          border-radius: 6px;
+          border: 1px solid #555;
           cursor: pointer;
           transition: 0.2s;
+          
+          /* TEXT STYLES (New) */
+          color: #aaa;
+          font-size: 11px;
+          font-weight: bold;
+          display: flex;
+          justify-content: center;
+          align-items: center;
       }
-      .seat:hover { background: #666; }
-      .seat.selected { background: #ffbd59; box-shadow: 0 0 10px #ffbd59; }
+      .seat:hover { background: #666; color: #fff; }
+      
+      /* Selected State (Gold) */
+      .seat.selected { 
+          background: #ffbd59; 
+          color: #000; 
+          border-color: #e6a800;
+          box-shadow: 0 0 8px rgba(255, 189, 89, 0.4); 
+      }
+
       .screen {
           width: 100%;
-          height: 10px;
-          background: #777;
-          border-radius: 50%;
-          margin-bottom: 20px;
-          box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+          height: 8px;
+          background: #ddd;
+          border-radius: 4px;
+          margin-bottom: 25px;
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+          text-align: center;
+          line-height: 8px;
+          font-size: 9px;
+          color: #000;
+          letter-spacing: 2px;
+          text-transform: uppercase;
       }
       .booking-row { background: #1a1a1a; padding: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ddd; }
   </style>
@@ -41,20 +62,20 @@
     <a href="index.html">Home</a>
     <a href="dashboard.html">Movies</a>
     <a href="admin-schedule.html">Schedule</a>
-    <a href="admin-booking.html" class="active">Bookings</a>
+    <a href="admin-bookings.html" class="active">Bookings</a>
     <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
   </nav>
 
   <div class="hero" style="margin-top: 100px;">
     <h1>Box Office</h1>
-    <p class="lead">Select a showtime and click seats to book.</p>
+    <p class="lead">Select a showtime and click specific seats.</p>
   </div>
 
   <section class="features">
     
     <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: center;">
         
-        <form id="addBookingForm" style="flex: 1; min-width: 300px;">
+        <form id="addBookingForm" style="flex: 1; min-width: 320px;">
             <h3 style="color:white; margin-bottom:15px;">Sell Ticket</h3>
             
             <label>Customer Name:</label><br>
@@ -66,13 +87,11 @@
             </select><br>
 
             <input type="hidden" id="seatCount" value="0">
-            
-            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; text-align: center;">
-                <label>Select Seats Below</label>
-                <div class="screen"></div>
+            <input type="hidden" id="seatLabels" value=""> <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333;">
+                <div class="screen">SCREEN</div>
                 <div id="seatMap" class="seat-grid">
                     </div>
-                <p id="seatDisplay" style="color: #ffbd59; font-weight: bold;">0 Seats Selected</p>
+                <p id="seatDisplay" style="color: #ffbd59; font-weight: bold; margin-top:15px; min-height: 20px;">No seats selected</p>
             </div>
             <br>
 
@@ -94,28 +113,47 @@
     import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // 1. Generate Visual Chairs
+    // 1. Generate LABELED Chairs (A1, A2...)
     const seatMap = document.getElementById('seatMap');
     const seatDisplay = document.getElementById('seatDisplay');
     const seatCountInput = document.getElementById('seatCount');
-    let selectedSeats = 0;
+    const seatLabelsInput = document.getElementById('seatLabels'); // Hidden field for DB
 
-    // Create 32 seats (4 rows of 8)
-    for (let i = 0; i < 32; i++) {
-        const seat = document.createElement('div');
-        seat.className = 'seat';
-        seat.addEventListener('click', () => {
-            seat.classList.toggle('selected');
-            updateCount();
-        });
-        seatMap.appendChild(seat);
-    }
+    const rows = ['A', 'B', 'C', 'D']; // 4 Rows
+    const seatsPerRow = 8;             // 8 Cols
 
-    function updateCount() {
-        const selected = document.querySelectorAll('.seat.selected');
-        selectedSeats = selected.length;
-        seatDisplay.textContent = `${selectedSeats} Seats Selected`;
-        seatCountInput.value = selectedSeats;
+    rows.forEach(rowLetter => {
+        for (let i = 1; i <= seatsPerRow; i++) {
+            const seatLabel = rowLetter + i; // e.g., "A1"
+            
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.textContent = seatLabel; // Show "A1" on the chair
+            seat.dataset.label = seatLabel; // Store it for logic
+            
+            seat.addEventListener('click', () => {
+                seat.classList.toggle('selected');
+                updateSelection();
+            });
+            seatMap.appendChild(seat);
+        }
+    });
+
+    function updateSelection() {
+        const selectedEls = document.querySelectorAll('.seat.selected');
+        const count = selectedEls.length;
+        
+        // Create a list of names like ["A1", "A2"]
+        const labels = Array.from(selectedEls).map(el => el.dataset.label);
+        
+        seatCountInput.value = count;
+        seatLabelsInput.value = labels.join(", "); // Store string "A1, A2"
+
+        if (count > 0) {
+            seatDisplay.textContent = `Selected: ${labels.join(", ")}`;
+        } else {
+            seatDisplay.textContent = "No seats selected";
+        }
     }
 
     // 2. Auth Check & Load Data
@@ -129,7 +167,7 @@
       }
     });
 
-    // 3. Load Showtimes (FIXED)
+    // 3. Load Showtimes
     async function loadShowtimes() {
         const select = document.getElementById('showtimeSelect');
         try {
@@ -146,7 +184,6 @@
                 const s = doc.data();
                 const date = new Date(s.datetime).toLocaleString();
                 const option = document.createElement('option');
-                // Value stores summary for the booking list
                 option.value = `${s.movieTitle} | ${date} | ${s.cinema}`;
                 option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
                 select.appendChild(option);
@@ -157,14 +194,15 @@
         }
     }
 
-    // 4. Submit Booking
+    // 4. Submit Booking (Now with Seat Numbers!)
     document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('custName').value;
         const details = document.getElementById('showtimeSelect').value;
-        const seats = document.getElementById('seatCount').value;
+        const count = document.getElementById('seatCount').value;
+        const specificSeats = document.getElementById('seatLabels').value; // Get "A1, A2"
 
-        if (seats == 0) {
+        if (count == 0) {
             alert("Please select at least one seat!");
             return;
         }
@@ -177,15 +215,16 @@
             await addDoc(collection(db, "bookings"), {
                 customer: name,
                 details: details,
-                seats: seats,
+                seatCount: count,
+                seatNumbers: specificSeats, // Saving "A1, A2" to DB
                 timestamp: new Date()
             });
-            alert("Ticket Sold!");
+            alert("Ticket Sold for seats: " + specificSeats);
             
             // Reset form
             document.getElementById('addBookingForm').reset();
             document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
-            updateCount();
+            updateSelection();
             
             loadBookings();
         } catch (error) {
@@ -209,8 +248,9 @@
                     <div>
                         <strong style="color:#ffbd59;">${b.customer}</strong>
                         <div style="font-size:13px; color:#aaa;">${b.details}</div>
+                        <div style="font-size:12px; color:#4CAF50;">Seats: ${b.seatNumbers || "N/A"}</div>
                     </div>
-                    <div style="font-weight:bold;">${b.seats} Seats</div>
+                    <div style="font-weight:bold;">${b.seatCount} Tix</div>
                 `;
                 list.appendChild(div);
             });
@@ -225,3 +265,6 @@
             window.location.href = "login.html";
         });
     });
+  </script>
+</body>
+</html>
