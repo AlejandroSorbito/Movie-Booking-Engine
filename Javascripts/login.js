@@ -1,4 +1,3 @@
-// Javascripts/login.js
 import { auth } from "../bookbuster.js"; 
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
@@ -29,8 +28,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     } catch (error) {
       // Error handling
+      alert(error.code); 
       console.error(error);
       errorMessage.textContent = 'Invalid email or password.';
     }
   });
-});
+}); 
