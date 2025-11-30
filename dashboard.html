@@ -4,6 +4,28 @@
   <meta charset="utf-8" />
   <title>Admin Dashboard | BookBuster</title>
   <link rel="stylesheet" href="CSS/style.css" />
+  <style>
+    /* Simple styling for the movie list */
+    .movie-item {
+      background: #1a1a1a;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #333;
+    }
+    .movie-info h4 { color: #ffbd59; margin: 0 0 5px 0; }
+    .movie-actions button {
+      padding: 5px 10px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    .btn-edit { background: #4CAF50; color: white; }
+    .btn-delete { background: #f44336; color: white; }
+    .btn-cancel { background: #777; color: white; margin-left: 10px; display: none; }
+  </style>
 </head>
 <body>
 
@@ -16,12 +38,15 @@
 
   <div class="hero" style="margin-top: 100px;">
     <h1>Admin Dashboard</h1>
-    <p class="lead">Add new movies to the database.</p>
+    <p class="lead">Manage your movie library.</p>
   </div>
 
   <section class="features">
-    <form id="addMovieForm" style="max-width: 500px; margin: 0 auto; text-align: left;">
+    <form id="addMovieForm" style="max-width: 600px; margin: 0 auto; text-align: left;">
+      <h3 id="formTitle" style="color:white; margin-bottom:15px;">Add New Movie</h3>
       
+      <input type="hidden" id="movieId">
+
       <label>Movie Title:</label><br>
       <input type="text" id="movieTitle" required placeholder="e.g. The Batman"><br><br>
 
@@ -29,52 +54,174 @@
       <textarea id="movieDesc" rows="4" required placeholder="Movie plot..."></textarea><br><br>
 
       <label>Image URL:</label><br>
-      <input type="text" id="movieImg" required placeholder="Paste an image link here"><br><br>
+      <input type="text" id="movieImg" required placeholder="Paste image address"><br><br>
 
-      <button type="submit">Add Movie</button>
+      <div style="display:flex; align-items:center;">
+          <button type="submit" id="submitBtn">Add Movie</button>
+          <button type="button" id="cancelBtn" class="btn-cancel">Cancel Edit</button>
+      </div>
       <p id="statusMessage" style="margin-top: 15px; color: #ffbd59; text-align: center;"></p>
     </form>
+
+    <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
+
+    <div style="max-width: 600px; margin: 0 auto; text-align: left;">
+        <h3 style="color:white; margin-bottom:15px;">Your Movies</h3>
+        <div id="adminMovieList">
+            <p style="color:#777;">Loading movies...</p>
+        </div>
+    </div>
   </section>
 
   <script type="module">
     import { db, auth } from "./bookbuster.js";
-    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    // Added 'doc', 'updateDoc', 'deleteDoc' for editing capabilities
+    import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // 1. Check if user is logged in
+    // 1. Auth Check
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      }
+      if (!user) window.location.href = "login.html";
+      else loadMovies(); // Load list if logged in
     });
 
-    // 2. Add Movie Logic
+    // 2. Load Movies Function
+    async function loadMovies() {
+        const listDiv = document.getElementById('adminMovieList');
+        listDiv.innerHTML = '<p style="color:#777;">Loading...</p>';
+        
+        try {
+            // Get all movies
+            const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            listDiv.innerHTML = ""; // Clear loader
+
+            if (querySnapshot.empty) {
+                listDiv.innerHTML = "<p>No movies found.</p>";
+                return;
+            }
+
+            querySnapshot.forEach((docSnap) => {
+                const movie = docSnap.data();
+                const id = docSnap.id; // The database ID
+
+                // Create HTML for list item
+                const item = document.createElement('div');
+                item.className = 'movie-item';
+                item.innerHTML = `
+                    <div class="movie-info">
+                        <h4>${movie.title}</h4>
+                        <small style="color:#aaa;">${movie.description.substring(0, 50)}...</small>
+                    </div>
+                    <div class="movie-actions">
+                        <button class="btn-edit" data-id="${id}">Edit</button>
+                        <button class="btn-delete" data-id="${id}">Delete</button>
+                    </div>
+                `;
+                
+                // Add event listeners specifically for this item's buttons
+                item.querySelector('.btn-edit').addEventListener('click', () => startEdit(id, movie));
+                item.querySelector('.btn-delete').addEventListener('click', () => deleteMovie(id));
+                
+                listDiv.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error(error);
+            listDiv.innerHTML = "<p>Error loading list.</p>";
+        }
+    }
+
+    // 3. Start Edit Mode
+    function startEdit(id, movie) {
+        // Fill the form with existing data
+        document.getElementById('movieId').value = id;
+        document.getElementById('movieTitle').value = movie.title;
+        document.getElementById('movieDesc').value = movie.description;
+        document.getElementById('movieImg').value = movie.image;
+
+        // Change Button Text
+        document.getElementById('submitBtn').textContent = "Update Movie";
+        document.getElementById('formTitle').textContent = "Edit Movie";
+        document.getElementById('cancelBtn').style.display = "inline-block";
+        
+        // Scroll to top
+        document.getElementById('addMovieForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 4. Cancel Edit Mode
+    document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+    function resetForm() {
+        document.getElementById('addMovieForm').reset();
+        document.getElementById('movieId').value = ""; // Clear ID
+        document.getElementById('submitBtn').textContent = "Add Movie";
+        document.getElementById('formTitle').textContent = "Add New Movie";
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    // 5. Submit Logic (Add OR Update)
     document.getElementById('addMovieForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusMsg = document.getElementById('statusMessage');
-      statusMsg.textContent = "Saving...";
+      const submitBtn = document.getElementById('submitBtn');
+      
+      statusMsg.textContent = "Processing...";
+      submitBtn.disabled = true;
 
+      const id = document.getElementById('movieId').value; // Check hidden ID
       const title = document.getElementById('movieTitle').value;
       const desc = document.getElementById('movieDesc').value;
       const img = document.getElementById('movieImg').value;
 
       try {
-        await addDoc(collection(db, "movies"), {
-          title: title,
-          description: desc,
-          image: img,
-          createdAt: new Date()
-        });
+        if (id) {
+            // --- UPDATE EXISTING MOVIE ---
+            const movieRef = doc(db, "movies", id);
+            await updateDoc(movieRef, {
+                title: title,
+                description: desc,
+                image: img
+            });
+            alert("Movie Updated Successfully!");
+        } else {
+            // --- ADD NEW MOVIE ---
+            await addDoc(collection(db, "movies"), {
+                title: title,
+                description: desc,
+                image: img,
+                createdAt: new Date()
+            });
+            alert("Movie Added Successfully!");
+        }
         
-        statusMsg.textContent = "Movie added successfully!";
-        e.target.reset(); 
+        resetForm();
+        loadMovies(); // Refresh the list at the bottom
+        statusMsg.textContent = "";
+
       } catch (error) {
-        console.error("Error adding movie: ", error);
-        statusMsg.textContent = "Error adding movie.";
+        console.error("Error: ", error);
+        alert("Error: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
       }
     });
 
-    // 3. Logout Logic
+    // 6. Delete Logic
+    async function deleteMovie(id) {
+        if(confirm("Are you sure you want to delete this movie?")) {
+            try {
+                await deleteDoc(doc(db, "movies", id));
+                loadMovies(); // Refresh list
+                alert("Movie deleted.");
+            } catch (error) {
+                alert("Error deleting: " + error.message);
+            }
+        }
+    }
+
+    // Logout
     document.getElementById('logoutBtn').addEventListener('click', () => {
         signOut(auth).then(() => {
             localStorage.removeItem('userLoggedIn');
