@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Check if user is already logged in
   if (localStorage.getItem('userLoggedIn') === 'true') {
-      window.location.href = 'admin-dashboard.html';
+      window.location.href = 'dashboard.html';
   }
 
   form.addEventListener('submit', async function(event) {
