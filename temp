@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Dashboard | BookBuster</title>
+  <link rel="stylesheet" href="CSS/style.css" />
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="movies.html">Movies</a>
+    <a href="#" class="active">Admin Panel</a>
+    <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
+  </nav>
+
+  <div class="hero" style="margin-top: 100px;">
+    <h1>Admin Dashboard</h1>
+    <p class="lead">Add new movies to the database.</p>
+  </div>
+
+  <section class="features">
+    <form id="addMovieForm" style="max-width: 500px; margin: 0 auto; text-align: left;">
+      
+      <label>Movie Title:</label><br>
+      <input type="text" id="movieTitle" required placeholder="e.g. The Batman"><br><br>
+
+      <label>Description:</label><br>
+      <textarea id="movieDesc" rows="4" required placeholder="Movie plot..."></textarea><br><br>
+
+      <label>Image URL:</label><br>
+      <input type="text" id="movieImg" required placeholder="Paste an image link here"><br><br>
+
+      <button type="submit">Add Movie</button>
+      <p id="statusMessage" style="margin-top: 15px; color: #ffbd59; text-align: center;"></p>
+    </form>
+  </section>
+
+  <script type="module">
+    import { db, auth } from "./bookbuster.js";
+    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    // 1. Check if user is logged in
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // 2. Add Movie Logic
+    document.getElementById('addMovieForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusMsg = document.getElementById('statusMessage');
+      statusMsg.textContent = "Saving...";
+
+      const title = document.getElementById('movieTitle').value;
+      const desc = document.getElementById('movieDesc').value;
+      const img = document.getElementById('movieImg').value;
+
+      try {
+        await addDoc(collection(db, "movies"), {
+          title: title,
+          description: desc,
+          image: img,
+          createdAt: new Date()
+        });
+        
+        statusMsg.textContent = "Movie added successfully!";
+        e.target.reset(); 
+      } catch (error) {
+        console.error("Error adding movie: ", error);
+        statusMsg.textContent = "Error adding movie.";
+      }
+    });
+
+    // 3. Logout Logic
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        signOut(auth).then(() => {
+            localStorage.removeItem('userLoggedIn');
+            window.location.href = "login.html";
+        });
+    });
+  </script>
+</body>
+</html>
