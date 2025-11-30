@@ -5,10 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('loginForm');
   const errorMessage = document.getElementById('errorMessage');
 
-// Check if user is already logged in
-if (localStorage.getItem('userLoggedIn') === 'true') {
-    window.location.href = 'dashboard.html';
-}
+  // --- NEW LOGIC: Check login & handle visibility ---
+  if (localStorage.getItem('userLoggedIn') === 'true') {
+      // If already logged in, redirect immediately (keep body hidden)
+      window.location.href = 'dashboard.html';
+  } else {
+      // If NOT logged in, show the login page now
+      document.body.style.display = "block";
+  }
+  // --------------------------------------------------
 
   form.addEventListener('submit', async function(event) {
     event.preventDefault(); 
@@ -18,20 +23,17 @@ if (localStorage.getItem('userLoggedIn') === 'true') {
     const password = document.getElementById('password').value;
 
     try {
-      // Send credentials to Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Success!
       console.log("Logged in:", userCredential.user.email);
       localStorage.setItem('userLoggedIn', 'true'); 
-      // Use the full link so there is no confusion
-      window.location.href = 'dashboard.html';
+      window.location.href = 'dashboard.html'; 
 
     } catch (error) {
-      // Error handling
+      // Alert the error code for easier debugging
       alert(error.code); 
       console.error(error);
       errorMessage.textContent = 'Invalid email or password.';
     }
-  });
-}); 
+  }); 
+});
