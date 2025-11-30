@@ -56,45 +56,41 @@
     </div>
   </section>
 
-  <script type="module">
+<script type="module">
     import { db, auth } from "./bookbuster.js";
     import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // Check if user is logged in
+    // Auth Check
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-          // Not logged in? Clear data and kick them out
           localStorage.removeItem('userLoggedIn');
           window.location.href = "login.html";
       } else {
-          // Logged in, so let's load the data
-          console.log("User verified. Loading content...");
           loadMoviesDropdown();
           loadSchedule();
       }
     });
 
-    // 1. Get movies from DB and put them in the dropdown
+    // 1. Load Movies Dropdown
     async function loadMoviesDropdown() {
         const select = document.getElementById('movieSelect');
-        
+        console.log("Loading movies..."); // check console
+
         try {
-            // Grab all movies, sorted by title
+            // Get movies
             const q = query(collection(db, "movies"), orderBy("title"));
             const snapshot = await getDocs(q);
             
-            // If DB is empty, tell the user
+            // CHECK: Is the database actually empty?
             if (snapshot.empty) {
-                console.log("No movies found in database.");
-                select.innerHTML = '<option value="">No movies found</option>';
+                console.warn("No movies found in 'movies' collection.");
+                select.innerHTML = '<option value="">Database is empty! Add a movie first.</option>';
                 return;
             }
 
-            // Reset dropdown
             select.innerHTML = '<option value="">-- Choose a Movie --</option>';
             
-            // Loop through movies and add to list
             snapshot.forEach(doc => {
                 const movie = doc.data();
                 const option = document.createElement('option');
@@ -104,61 +100,51 @@
             });
 
         } catch (error) {
-            console.error("Something went wrong loading movies:", error);
-            alert("Could not load movie list. Check console.");
+            console.error("Error loading movies:", error);
+            // If this alert pops up, it's a permission/network issue
+            alert("Error connecting to DB: " + error.message);
         }
     }
 
-    // 2. Handle the form submit (Adding a showtime)
+    // 2. Add Showtime
     document.getElementById('addShowtimeForm').addEventListener('submit', async (e) => {
-        e.preventDefault(); // Stop page refresh
-
+        e.preventDefault();
         const movieTitle = document.getElementById('movieSelect').value;
         const cinema = document.getElementById('cinemaSelect').value;
         const dateTime = document.getElementById('showTime').value;
 
-        // Basic validation
         if (!movieTitle) {
-            alert("Please pick a movie first.");
+            alert("Please select a movie.");
             return;
         }
 
         try {
-            // Save to 'showtimes' collection
             await addDoc(collection(db, "showtimes"), {
                 movieTitle: movieTitle,
                 cinema: cinema,
                 datetime: dateTime,
                 createdAt: new Date()
             });
-            
             alert("Showtime added!");
-            loadSchedule(); // Refresh the list below
-
+            loadSchedule();
         } catch (error) {
-            alert("Error adding showtime: " + error.message);
+            alert("Error: " + error.message);
         }
     });
 
-    // 3. Load the list of upcoming shows
+    // 3. Load Schedule
     async function loadSchedule() {
         const list = document.getElementById('scheduleList');
-        
         try {
-            // Get showtimes, sorted by date (earliest first)
             const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
             const snapshot = await getDocs(q);
 
-            list.innerHTML = ""; // Clear current list
-
+            list.innerHTML = "";
             snapshot.forEach(docSnap => {
                 const show = docSnap.data();
                 const dateObj = new Date(show.datetime);
-                
-                // Make the date look nice (e.g. 10/25/2025 2:30 PM)
                 const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-                // Create the HTML card
                 const item = document.createElement('div');
                 item.className = 'schedule-item';
                 item.innerHTML = `
@@ -170,25 +156,18 @@
                 `;
                 list.appendChild(item);
             });
-
         } catch (error) {
-            console.error("Error loading schedule:", error);
+            console.error(error);
         }
     }
 
-    // Allow the delete button to work globally
     window.deleteShowtime = async (id) => {
         if(confirm("Delete this showtime?")) {
-            try {
-                await deleteDoc(doc(db, "showtimes", id));
-                loadSchedule(); // Update list after delete
-            } catch (error) {
-                alert("Could not delete: " + error.message);
-            }
+            await deleteDoc(doc(db, "showtimes", id));
+            loadSchedule();
         }
     }
 
-    // Logout button logic
     document.getElementById('logoutBtn').addEventListener('click', () => {
         signOut(auth).then(() => {
             localStorage.removeItem('userLoggedIn');
