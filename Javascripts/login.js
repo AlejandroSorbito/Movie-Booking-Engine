@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // Success!
       console.log("Logged in:", userCredential.user.email);
       localStorage.setItem('userLoggedIn', 'true'); 
-      window.location.href = 'dashboard.html'; 
+      // Use the full link so there is no confusion
+      window.location.href = 'https://alejandrosorbito.github.io/BookBuster/dashboard.html';
 
     } catch (error) {
       // Error handling
