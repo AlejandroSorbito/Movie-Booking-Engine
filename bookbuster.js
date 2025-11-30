@@ -1,13 +1,14 @@
 // bookbuster.js
+
+// Import the functions you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
-// Add these two imports:
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  // PASTE YOUR REAL KEYS HERE (The ones from your screenshot)
-  apiKey: "AIzaSyDeX...", 
+  apiKey: "AIzaSyDeXAw8fIbowMe3USIGj__-qgP8uFDsIuc",
   authDomain: "bookbuster-563d8.firebaseapp.com",
   projectId: "bookbuster-563d8",
   storageBucket: "bookbuster-563d8.firebasestorage.app",
@@ -16,9 +17,8 @@ const firebaseConfig = {
   measurementId: "G-870CLNZFDL"
 };
 
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-// Export Auth and DB so we can use them in other files
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Initialize Firebase
+export const app = initializeApp(firebaseConfig);
+export const analytics = getAnalytics(app);
+export const auth = getAuth(app);       // Export Auth for login
+export const db = getFirestore(app);    // Export Database for movies
