@@ -5,6 +5,33 @@
   <title>Manage Bookings | BookBuster</title>
   <link rel="stylesheet" href="CSS/style.css" />
   <style>
+      /* --- SEAT MAP STYLES --- */
+      .seat-grid {
+          display: grid;
+          grid-template-columns: repeat(8, 1fr); /* 8 seats per row */
+          gap: 10px;
+          margin: 20px 0;
+          max-width: 400px;
+      }
+      .seat {
+          width: 35px;
+          height: 35px;
+          background: #444;
+          border-radius: 5px;
+          border: none;
+          cursor: pointer;
+          transition: 0.2s;
+      }
+      .seat:hover { background: #666; }
+      .seat.selected { background: #ffbd59; box-shadow: 0 0 10px #ffbd59; }
+      .screen {
+          width: 100%;
+          height: 10px;
+          background: #777;
+          border-radius: 50%;
+          margin-bottom: 20px;
+          box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+      }
       .booking-row { background: #1a1a1a; padding: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ddd; }
   </style>
 </head>
@@ -20,33 +47,46 @@
 
   <div class="hero" style="margin-top: 100px;">
     <h1>Box Office</h1>
-    <p class="lead">View reservations and sell tickets manually.</p>
+    <p class="lead">Select a showtime and click seats to book.</p>
   </div>
 
   <section class="features">
-    <form id="addBookingForm">
-      <h3 style="color:white; margin-bottom:15px;">Sell Ticket</h3>
-      
-      <label>Customer Name:</label><br>
-      <input type="text" id="custName" required placeholder="John Doe"><br><br>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: center;">
+        
+        <form id="addBookingForm" style="flex: 1; min-width: 300px;">
+            <h3 style="color:white; margin-bottom:15px;">Sell Ticket</h3>
+            
+            <label>Customer Name:</label><br>
+            <input type="text" id="custName" required placeholder="John Doe"><br><br>
 
-      <label>Select Showtime:</label><br>
-      <select id="showtimeSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
-          <option value="">-- Choose Showtime --</option>
-      </select><br>
+            <label>Select Showtime:</label><br>
+            <select id="showtimeSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
+                <option value="">Loading showtimes...</option>
+            </select><br>
 
-      <label>Seats:</label><br>
-      <input type="number" id="seatCount" value="1" min="1" required><br><br>
+            <input type="hidden" id="seatCount" value="0">
+            
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; text-align: center;">
+                <label>Select Seats Below</label>
+                <div class="screen"></div>
+                <div id="seatMap" class="seat-grid">
+                    </div>
+                <p id="seatDisplay" style="color: #ffbd59; font-weight: bold;">0 Seats Selected</p>
+            </div>
+            <br>
 
-      <button type="submit">Confirm Booking</button>
-    </form>
+            <button type="submit">Confirm Booking</button>
+        </form>
 
-    <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
-
-    <div style="max-width: 800px; margin: 0 auto; text-align: left;">
-        <h3 style="color:white; margin-bottom:15px;">Recent Bookings</h3>
-        <div id="bookingList"></div>
+        <div style="flex: 1; min-width: 300px; text-align: left;">
+            <h3 style="color:white; margin-bottom:15px;">Recent Sales</h3>
+            <div id="bookingList">
+                <p>Loading...</p>
+            </div>
+        </div>
     </div>
+
   </section>
 
   <script type="module">
@@ -54,34 +94,84 @@
     import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-      onAuthStateChanged(auth, (user) => {
+    // 1. Generate Visual Chairs
+    const seatMap = document.getElementById('seatMap');
+    const seatDisplay = document.getElementById('seatDisplay');
+    const seatCountInput = document.getElementById('seatCount');
+    let selectedSeats = 0;
+
+    // Create 32 seats (4 rows of 8)
+    for (let i = 0; i < 32; i++) {
+        const seat = document.createElement('div');
+        seat.className = 'seat';
+        seat.addEventListener('click', () => {
+            seat.classList.toggle('selected');
+            updateCount();
+        });
+        seatMap.appendChild(seat);
+    }
+
+    function updateCount() {
+        const selected = document.querySelectorAll('.seat.selected');
+        selectedSeats = selected.length;
+        seatDisplay.textContent = `${selectedSeats} Seats Selected`;
+        seatCountInput.value = selectedSeats;
+    }
+
+    // 2. Auth Check & Load Data
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
           localStorage.removeItem('userLoggedIn');
           window.location.href = "login.html";
       } else {
+          loadShowtimes();
+          loadBookings();
       }
     });
 
+    // 3. Load Showtimes (FIXED)
     async function loadShowtimes() {
         const select = document.getElementById('showtimeSelect');
-        const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
-        const snapshot = await getDocs(q);
-        
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            const date = new Date(s.datetime).toLocaleString();
-            const option = document.createElement('option');
-            option.value = `${s.movieTitle} | ${date} | ${s.cinema}`;
-            option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
-            select.appendChild(option);
-        });
+        try {
+            const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                select.innerHTML = '<option value="">No upcoming shows found.</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">-- Choose Showtime --</option>';
+            snapshot.forEach(doc => {
+                const s = doc.data();
+                const date = new Date(s.datetime).toLocaleString();
+                const option = document.createElement('option');
+                // Value stores summary for the booking list
+                option.value = `${s.movieTitle} | ${date} | ${s.cinema}`;
+                option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error(error);
+            select.innerHTML = '<option value="">Error loading list</option>';
+        }
     }
 
+    // 4. Submit Booking
     document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('custName').value;
         const details = document.getElementById('showtimeSelect').value;
         const seats = document.getElementById('seatCount').value;
+
+        if (seats == 0) {
+            alert("Please select at least one seat!");
+            return;
+        }
+        if (!details) {
+            alert("Please select a showtime.");
+            return;
+        }
 
         try {
             await addDoc(collection(db, "bookings"), {
@@ -91,36 +181,47 @@
                 timestamp: new Date()
             });
             alert("Ticket Sold!");
+            
+            // Reset form
+            document.getElementById('addBookingForm').reset();
+            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+            updateCount();
+            
             loadBookings();
         } catch (error) {
             alert("Error: " + error.message);
         }
     });
 
+    // 5. Load Recent Bookings
     async function loadBookings() {
         const list = document.getElementById('bookingList');
-        const q = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q);
+        try {
+            const q = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
+            const snapshot = await getDocs(q);
 
-        list.innerHTML = "";
-        snapshot.forEach(doc => {
-            const b = doc.data();
-            const div = document.createElement('div');
-            div.className = 'booking-row';
-            div.innerHTML = `
-                <div>
-                    <strong style="color:#ffbd59;">${b.customer}</strong>
-                    <div style="font-size:13px; color:#aaa;">${b.details}</div>
-                </div>
-                <div style="font-weight:bold;">${b.seats} Seats</div>
-            `;
-            list.appendChild(div);
-        });
+            list.innerHTML = "";
+            snapshot.forEach(doc => {
+                const b = doc.data();
+                const div = document.createElement('div');
+                div.className = 'booking-row';
+                div.innerHTML = `
+                    <div>
+                        <strong style="color:#ffbd59;">${b.customer}</strong>
+                        <div style="font-size:13px; color:#aaa;">${b.details}</div>
+                    </div>
+                    <div style="font-weight:bold;">${b.seats} Seats</div>
+                `;
+                list.appendChild(div);
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        signOut(auth).then(() => window.location.href = "login.html");
+        signOut(auth).then(() => {
+            localStorage.removeItem('userLoggedIn');
+            window.location.href = "login.html";
+        });
     });
-  </script>
-</body>
-</html>
