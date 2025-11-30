@@ -51,7 +51,7 @@
 
   <script type="module">
     import { db, auth } from "./bookbuster.js";
-    import { collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
     onAuthStateChanged(auth, (user) => {
@@ -62,7 +62,6 @@
       }
     });
 
-    // 1. Load Showtimes into Dropdown
     async function loadShowtimes() {
         const select = document.getElementById('showtimeSelect');
         const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
@@ -72,13 +71,12 @@
             const s = doc.data();
             const date = new Date(s.datetime).toLocaleString();
             const option = document.createElement('option');
-            option.value = `${s.movieTitle} | ${date} | ${s.cinema}`; // Storing detail string as value for simplicity
+            option.value = `${s.movieTitle} | ${date} | ${s.cinema}`;
             option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
             select.appendChild(option);
         });
     }
 
-    // 2. Add Booking
     document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('custName').value;
@@ -88,7 +86,7 @@
         try {
             await addDoc(collection(db, "bookings"), {
                 customer: name,
-                details: details, // Stores "Movie | Date | Cinema"
+                details: details,
                 seats: seats,
                 timestamp: new Date()
             });
@@ -99,7 +97,6 @@
         }
     });
 
-    // 3. Load Bookings List
     async function loadBookings() {
         const list = document.getElementById('bookingList');
         const q = query(collection(db, "bookings"), orderBy("timestamp", "desc"));

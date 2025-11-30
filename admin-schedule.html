@@ -5,7 +5,6 @@
   <title>Manage Schedule | BookBuster</title>
   <link rel="stylesheet" href="CSS/style.css" />
   <style>
-      /* Quick styles specific to this page */
       .schedule-item { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
       .tag { background: #ffbd59; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
   </style>
@@ -62,7 +61,6 @@
     import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // Auth Check
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
       else {
@@ -71,7 +69,7 @@
       }
     });
 
-    // 1. Populate Dropdown with Movies from DB
+    // 1. Populate Dropdown with Movies
     async function loadMoviesDropdown() {
         const select = document.getElementById('movieSelect');
         const q = query(collection(db, "movies"), orderBy("title"));
@@ -80,9 +78,8 @@
         select.innerHTML = '<option value="">-- Choose a Movie --</option>';
         snapshot.forEach(doc => {
             const movie = doc.data();
-            // We save the ID as the value, and Title as the text
             const option = document.createElement('option');
-            option.value = movie.title; // Using title for simplicity in this project
+            option.value = movie.title; 
             option.textContent = movie.title;
             select.appendChild(option);
         });
@@ -119,8 +116,6 @@
         snapshot.forEach(docSnap => {
             const show = docSnap.data();
             const dateObj = new Date(show.datetime);
-            
-            // Format date nicely (e.g., "Oct 25, 2:30 PM")
             const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
             const item = document.createElement('div');
@@ -136,7 +131,6 @@
         });
     }
 
-    // Expose delete function to window so the HTML button can see it
     window.deleteShowtime = async (id) => {
         if(confirm("Delete this showtime?")) {
             await deleteDoc(doc(db, "showtimes", id));
