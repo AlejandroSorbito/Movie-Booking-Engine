@@ -34,25 +34,26 @@
 
 <script type="module">
     import { db } from "./bookbuster.js";
-    // 1. We added 'query', 'orderBy', and 'limit' to the imports
-    import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    // --- NEW: CHECK IF ADMIN IS LOGGED IN ---
+    const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
+    const loginLink = document.querySelector('.login-link'); // Finds the "Login" button in nav
+
+    if (userLoggedIn && loginLink) {
+        // If logged in, change "Login" button to "Dashboard"
+        loginLink.textContent = "Admin Panel";
+        loginLink.href = "dashboard.html";
+        loginLink.style.backgroundColor = "#e6b800"; // Optional: Make it darker gold
+    }
+    // ----------------------------------------
 
     const container = document.getElementById('movies-container');
 
     async function loadMovies() {
       try {
-        const moviesRef = collection(db, "movies");
-
-        // --- CHOOSE YOUR OPTION BELOW ---
-        
-        // OPTION A: Show ALL movies, but newest ones first (Best for Movies Page)
-        const q = query(moviesRef, orderBy("createdAt", "desc"));
-
-        // OPTION B: Show ONLY the top 3 newest movies (Best for Home Page)
-        // const q = query(moviesRef, orderBy("createdAt", "desc"), limit(3));
-        
-        // --------------------------------
-
+        // Get movies sorted by Newest
+        const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
@@ -75,7 +76,6 @@
         });
       } catch (error) {
         console.error("Error loading movies:", error);
-        container.innerHTML = "<p>Error loading movies. Check console (F12).</p>";
       }
     }
 
