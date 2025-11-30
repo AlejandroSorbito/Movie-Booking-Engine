@@ -61,87 +61,139 @@
     import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-      onAuthStateChanged(auth, (user) => {
+    // Check if user is logged in
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
+          // Not logged in? Clear data and kick them out
           localStorage.removeItem('userLoggedIn');
           window.location.href = "login.html";
       } else {
-          // ... load functions ...
-
+          // Logged in, so let's load the data
+          console.log("User verified. Loading content...");
+          loadMoviesDropdown();
+          loadSchedule();
       }
     });
 
-    // 1. Populate Dropdown with Movies
+    // 1. Get movies from DB and put them in the dropdown
     async function loadMoviesDropdown() {
         const select = document.getElementById('movieSelect');
-        const q = query(collection(db, "movies"), orderBy("title"));
-        const snapshot = await getDocs(q);
         
-        select.innerHTML = '<option value="">-- Choose a Movie --</option>';
-        snapshot.forEach(doc => {
-            const movie = doc.data();
-            const option = document.createElement('option');
-            option.value = movie.title; 
-            option.textContent = movie.title;
-            select.appendChild(option);
-        });
+        try {
+            // Grab all movies, sorted by title
+            const q = query(collection(db, "movies"), orderBy("title"));
+            const snapshot = await getDocs(q);
+            
+            // If DB is empty, tell the user
+            if (snapshot.empty) {
+                console.log("No movies found in database.");
+                select.innerHTML = '<option value="">No movies found</option>';
+                return;
+            }
+
+            // Reset dropdown
+            select.innerHTML = '<option value="">-- Choose a Movie --</option>';
+            
+            // Loop through movies and add to list
+            snapshot.forEach(doc => {
+                const movie = doc.data();
+                const option = document.createElement('option');
+                option.value = movie.title; 
+                option.textContent = movie.title;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error("Something went wrong loading movies:", error);
+            alert("Could not load movie list. Check console.");
+        }
     }
 
-    // 2. Add Showtime
+    // 2. Handle the form submit (Adding a showtime)
     document.getElementById('addShowtimeForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Stop page refresh
+
         const movieTitle = document.getElementById('movieSelect').value;
         const cinema = document.getElementById('cinemaSelect').value;
         const dateTime = document.getElementById('showTime').value;
 
+        // Basic validation
+        if (!movieTitle) {
+            alert("Please pick a movie first.");
+            return;
+        }
+
         try {
+            // Save to 'showtimes' collection
             await addDoc(collection(db, "showtimes"), {
                 movieTitle: movieTitle,
                 cinema: cinema,
                 datetime: dateTime,
                 createdAt: new Date()
             });
+            
             alert("Showtime added!");
-            loadSchedule();
+            loadSchedule(); // Refresh the list below
+
         } catch (error) {
-            alert("Error: " + error.message);
+            alert("Error adding showtime: " + error.message);
         }
     });
 
-    // 3. Load Schedule List
+    // 3. Load the list of upcoming shows
     async function loadSchedule() {
         const list = document.getElementById('scheduleList');
-        const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
-        const snapshot = await getDocs(q);
+        
+        try {
+            // Get showtimes, sorted by date (earliest first)
+            const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
+            const snapshot = await getDocs(q);
 
-        list.innerHTML = "";
-        snapshot.forEach(docSnap => {
-            const show = docSnap.data();
-            const dateObj = new Date(show.datetime);
-            const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            list.innerHTML = ""; // Clear current list
 
-            const item = document.createElement('div');
-            item.className = 'schedule-item';
-            item.innerHTML = `
-                <div>
-                    <h4 style="color:#fff; margin-bottom:4px;">${show.movieTitle}</h4>
-                    <span class="tag">${show.cinema}</span> <span style="color:#aaa; font-size:14px; margin-left:8px;">${dateStr}</span>
-                </div>
-                <button onclick="deleteShowtime('${docSnap.id}')" style="background:#f44336; padding:5px 10px; font-size:12px; width:auto;">X</button>
-            `;
-            list.appendChild(item);
-        });
-    }
+            snapshot.forEach(docSnap => {
+                const show = docSnap.data();
+                const dateObj = new Date(show.datetime);
+                
+                // Make the date look nice (e.g. 10/25/2025 2:30 PM)
+                const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-    window.deleteShowtime = async (id) => {
-        if(confirm("Delete this showtime?")) {
-            await deleteDoc(doc(db, "showtimes", id));
-            loadSchedule();
+                // Create the HTML card
+                const item = document.createElement('div');
+                item.className = 'schedule-item';
+                item.innerHTML = `
+                    <div>
+                        <h4 style="color:#fff; margin-bottom:4px;">${show.movieTitle}</h4>
+                        <span class="tag">${show.cinema}</span> <span style="color:#aaa; font-size:14px; margin-left:8px;">${dateStr}</span>
+                    </div>
+                    <button onclick="deleteShowtime('${docSnap.id}')" style="background:#f44336; padding:5px 10px; font-size:12px; width:auto;">X</button>
+                `;
+                list.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error("Error loading schedule:", error);
         }
     }
 
+    // Allow the delete button to work globally
+    window.deleteShowtime = async (id) => {
+        if(confirm("Delete this showtime?")) {
+            try {
+                await deleteDoc(doc(db, "showtimes", id));
+                loadSchedule(); // Update list after delete
+            } catch (error) {
+                alert("Could not delete: " + error.message);
+            }
+        }
+    }
+
+    // Logout button logic
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        signOut(auth).then(() => window.location.href = "login.html");
+        signOut(auth).then(() => {
+            localStorage.removeItem('userLoggedIn');
+            window.location.href = "login.html";
+        });
     });
   </script>
 </body>
