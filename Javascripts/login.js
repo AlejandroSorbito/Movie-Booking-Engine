@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Success!
       console.log("Logged in:", userCredential.user.email);
       localStorage.setItem('userLoggedIn', 'true'); 
-      window.location.href = 'admin dashboard.html'; 
+      window.location.href = 'admin-dashboard.html'; 
 
     } catch (error) {
       // Error handling
