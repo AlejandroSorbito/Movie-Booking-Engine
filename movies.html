@@ -1,12 +1,12 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width,initial-scale=1" />
-      <title>BookBuster | Movies</title>
-      <link rel="stylesheet" href="CSS/style.css" />
-    </head>
-    <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BookBuster | Movies</title>
+  <link rel="stylesheet" href="CSS/style.css" />
+</head>
+<body>
 
   <nav>
     <a href="index.html" >Home</a>
@@ -17,22 +17,69 @@
     <a href="login.html" class="login-link">Login</a>
   </nav>
 
-      <div class="hero">
-        <h1>Now Showing</h1>
-        <p class="lead">Discover the latest releases and top-rated movies available now!</p>
-        <a class="btn" href="movies.html">Explore Movies</a>
-      </div>
+  <div class="hero">
+    <h1>Now Showing</h1>
+    <p class="lead">Discover the latest releases and top-rated movies available now!</p>
+    <a class="btn" href="movies.html">Explore Movies</a>
+  </div>
 
-      <section class="features">
-  <div class="feature"><i><img src="assets/images/Dune - Part 2.jpg" alt="Dune - Part 2"></i><h3>Dune: Part Two</h3><p>Epic sci-fi — Paul Atreides returns to lead the Fremen.</p></div>
-  <div class="feature"><i><img src="assets/images/The Batman.jpg" alt="The Batman"></i><h3>The Batman</h3><p>Gritty, noir-inspired detective story from Gotham City.</p></div>
-  <div class="feature"><i><img src="assets/images/Interstellar.jpg" alt="Interstellar"></i><h3>Interstellar</h3><p>A breathtaking exploration of love, time, and survival.</p></div>
-</section>
+  <section class="features" id="movies-container">
+    <p style="text-align:center; width:100%; color: #aaa;">Loading movies...</p>
+  </section>
 
+  <footer>
+    <p>&copy; 2025 BookBuster. All rights reserved.</p>
+    <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+  </footer>
 
-      <footer>
-        <p>&copy; 2025 BookBuster. All rights reserved.</p>
-        <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
-      </footer>
-    </body>
-    </html>
+<script type="module">
+    import { db } from "./bookbuster.js";
+    // 1. We added 'query', 'orderBy', and 'limit' to the imports
+    import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const container = document.getElementById('movies-container');
+
+    async function loadMovies() {
+      try {
+        const moviesRef = collection(db, "movies");
+
+        // --- CHOOSE YOUR OPTION BELOW ---
+        
+        // OPTION A: Show ALL movies, but newest ones first (Best for Movies Page)
+        const q = query(moviesRef, orderBy("createdAt", "desc"));
+
+        // OPTION B: Show ONLY the top 3 newest movies (Best for Home Page)
+        // const q = query(moviesRef, orderBy("createdAt", "desc"), limit(3));
+        
+        // --------------------------------
+
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          container.innerHTML = "<p>No movies found. Add some in the Admin Dashboard!</p>";
+          return;
+        }
+
+        container.innerHTML = ""; // Clear loading text
+
+        querySnapshot.forEach((doc) => {
+          const movie = doc.data();
+          const movieHTML = `
+            <div class="feature">
+                <i><img src="${movie.image}" alt="${movie.title}" style="width:100%; height:auto; border-radius:8px; margin-bottom:10px;"></i>
+                <h3>${movie.title}</h3>
+                <p>${movie.description}</p>
+            </div>
+          `;
+          container.innerHTML += movieHTML;
+        });
+      } catch (error) {
+        console.error("Error loading movies:", error);
+        container.innerHTML = "<p>Error loading movies. Check console (F12).</p>";
+      }
+    }
+
+    loadMovies();
+  </script>
+</body>
+</html>
