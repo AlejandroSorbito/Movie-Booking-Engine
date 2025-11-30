@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('loginForm');
   const errorMessage = document.getElementById('errorMessage');
 
-  // Check if user is already logged in
-  if (localStorage.getItem('userLoggedIn') === 'true') {
-      window.location.href = 'dashboard.html';
-  }
+// Check if user is already logged in
+if (localStorage.getItem('userLoggedIn') === 'true') {
+    window.location.href = 'dashboard.html';
+}
 
   form.addEventListener('submit', async function(event) {
     event.preventDefault(); 
