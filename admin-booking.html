@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Manage Bookings | BookBuster</title>
+  <link rel="stylesheet" href="CSS/style.css" />
+  <style>
+      .booking-row { background: #1a1a1a; padding: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ddd; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="admin-dashboard.html">Movies</a>
+    <a href="admin-schedule.html">Schedule</a>
+    <a href="admin-bookings.html" class="active">Bookings</a>
+    <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
+  </nav>
+
+  <div class="hero" style="margin-top: 100px;">
+    <h1>Box Office</h1>
+    <p class="lead">View reservations and sell tickets manually.</p>
+  </div>
+
+  <section class="features">
+    <form id="addBookingForm">
+      <h3 style="color:white; margin-bottom:15px;">Sell Ticket</h3>
+      
+      <label>Customer Name:</label><br>
+      <input type="text" id="custName" required placeholder="John Doe"><br><br>
+
+      <label>Select Showtime:</label><br>
+      <select id="showtimeSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
+          <option value="">-- Choose Showtime --</option>
+      </select><br>
+
+      <label>Seats:</label><br>
+      <input type="number" id="seatCount" value="1" min="1" required><br><br>
+
+      <button type="submit">Confirm Booking</button>
+    </form>
+
+    <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
+
+    <div style="max-width: 800px; margin: 0 auto; text-align: left;">
+        <h3 style="color:white; margin-bottom:15px;">Recent Bookings</h3>
+        <div id="bookingList"></div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { db, auth } from "./bookbuster.js";
+    import { collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+      else {
+          loadShowtimes();
+          loadBookings();
+      }
+    });
+
+    // 1. Load Showtimes into Dropdown
+    async function loadShowtimes() {
+        const select = document.getElementById('showtimeSelect');
+        const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
+        const snapshot = await getDocs(q);
+        
+        snapshot.forEach(doc => {
+            const s = doc.data();
+            const date = new Date(s.datetime).toLocaleString();
+            const option = document.createElement('option');
+            option.value = `${s.movieTitle} | ${date} | ${s.cinema}`; // Storing detail string as value for simplicity
+            option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
+            select.appendChild(option);
+        });
+    }
+
+    // 2. Add Booking
+    document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('custName').value;
+        const details = document.getElementById('showtimeSelect').value;
+        const seats = document.getElementById('seatCount').value;
+
+        try {
+            await addDoc(collection(db, "bookings"), {
+                customer: name,
+                details: details, // Stores "Movie | Date | Cinema"
+                seats: seats,
+                timestamp: new Date()
+            });
+            alert("Ticket Sold!");
+            loadBookings();
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    });
+
+    // 3. Load Bookings List
+    async function loadBookings() {
+        const list = document.getElementById('bookingList');
+        const q = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+
+        list.innerHTML = "";
+        snapshot.forEach(doc => {
+            const b = doc.data();
+            const div = document.createElement('div');
+            div.className = 'booking-row';
+            div.innerHTML = `
+                <div>
+                    <strong style="color:#ffbd59;">${b.customer}</strong>
+                    <div style="font-size:13px; color:#aaa;">${b.details}</div>
+                </div>
+                <div style="font-weight:bold;">${b.seats} Seats</div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        signOut(auth).then(() => window.location.href = "login.html");
+    });
+  </script>
+</body>
+</html>

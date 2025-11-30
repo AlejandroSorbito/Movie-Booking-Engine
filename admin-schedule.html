@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Manage Schedule | BookBuster</title>
+  <link rel="stylesheet" href="CSS/style.css" />
+  <style>
+      /* Quick styles specific to this page */
+      .schedule-item { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+      .tag { background: #ffbd59; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="admin-dashboard.html">Movies</a>
+    <a href="admin-schedule.html" class="active">Schedule</a>
+    <a href="admin-bookings.html">Bookings</a>
+    <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
+  </nav>
+
+  <div class="hero" style="margin-top: 100px;">
+    <h1>Manage Showtimes</h1>
+    <p class="lead">Assign movies to cinemas and times.</p>
+  </div>
+
+  <section class="features">
+    <form id="addShowtimeForm">
+      <h3 style="color:white; margin-bottom:15px;">Add New Showtime</h3>
+      
+      <label>Select Movie:</label><br>
+      <select id="movieSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
+          <option value="">Loading movies...</option>
+      </select><br>
+
+      <label>Cinema Hall:</label><br>
+      <select id="cinemaSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
+          <option value="Cinema 1">Cinema 1</option>
+          <option value="Cinema 2">Cinema 2</option>
+          <option value="IMAX">IMAX Hall</option>
+      </select><br>
+
+      <label>Date & Time:</label><br>
+      <input type="datetime-local" id="showTime" required><br><br>
+
+      <button type="submit" id="submitBtn">Add to Schedule</button>
+    </form>
+
+    <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
+
+    <div style="max-width: 600px; margin: 0 auto; text-align: left;">
+        <h3 style="color:white; margin-bottom:15px;">Upcoming Showtimes</h3>
+        <div id="scheduleList">
+            <p style="color:#777;">Loading schedule...</p>
+        </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { db, auth } from "./bookbuster.js";
+    import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    // Auth Check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+      else {
+          loadMoviesDropdown();
+          loadSchedule();
+      }
+    });
+
+    // 1. Populate Dropdown with Movies from DB
+    async function loadMoviesDropdown() {
+        const select = document.getElementById('movieSelect');
+        const q = query(collection(db, "movies"), orderBy("title"));
+        const snapshot = await getDocs(q);
+        
+        select.innerHTML = '<option value="">-- Choose a Movie --</option>';
+        snapshot.forEach(doc => {
+            const movie = doc.data();
+            // We save the ID as the value, and Title as the text
+            const option = document.createElement('option');
+            option.value = movie.title; // Using title for simplicity in this project
+            option.textContent = movie.title;
+            select.appendChild(option);
+        });
+    }
+
+    // 2. Add Showtime
+    document.getElementById('addShowtimeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const movieTitle = document.getElementById('movieSelect').value;
+        const cinema = document.getElementById('cinemaSelect').value;
+        const dateTime = document.getElementById('showTime').value;
+
+        try {
+            await addDoc(collection(db, "showtimes"), {
+                movieTitle: movieTitle,
+                cinema: cinema,
+                datetime: dateTime,
+                createdAt: new Date()
+            });
+            alert("Showtime added!");
+            loadSchedule();
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    });
+
+    // 3. Load Schedule List
+    async function loadSchedule() {
+        const list = document.getElementById('scheduleList');
+        const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
+        const snapshot = await getDocs(q);
+
+        list.innerHTML = "";
+        snapshot.forEach(docSnap => {
+            const show = docSnap.data();
+            const dateObj = new Date(show.datetime);
+            
+            // Format date nicely (e.g., "Oct 25, 2:30 PM")
+            const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            const item = document.createElement('div');
+            item.className = 'schedule-item';
+            item.innerHTML = `
+                <div>
+                    <h4 style="color:#fff; margin-bottom:4px;">${show.movieTitle}</h4>
+                    <span class="tag">${show.cinema}</span> <span style="color:#aaa; font-size:14px; margin-left:8px;">${dateStr}</span>
+                </div>
+                <button onclick="deleteShowtime('${docSnap.id}')" style="background:#f44336; padding:5px 10px; font-size:12px; width:auto;">X</button>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    // Expose delete function to window so the HTML button can see it
+    window.deleteShowtime = async (id) => {
+        if(confirm("Delete this showtime?")) {
+            await deleteDoc(doc(db, "showtimes", id));
+            loadSchedule();
+        }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        signOut(auth).then(() => window.location.href = "login.html");
+    });
+  </script>
+</body>
+</html>
