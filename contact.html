@@ -37,5 +37,20 @@
         <p>&copy; 2025 BookBuster. All rights reserved.</p>
         <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
       </footer>
+
+      <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check if the "LoggedIn" flag is saved in the browser
+      const isLogged = localStorage.getItem('userLoggedIn') === 'true';
+      const loginLink = document.querySelector('.login-link');
+
+      if (isLogged && loginLink) {
+        // If logged in, change the button to point to the Dashboard
+        loginLink.textContent = "Admin Panel";
+        loginLink.href = "dashboard.html"; // Make sure this matches your file name!
+        loginLink.style.backgroundColor = "#e6b800"; // Optional: Darker gold color
+      }
+    });
+  </script>
     </body>
     </html>
