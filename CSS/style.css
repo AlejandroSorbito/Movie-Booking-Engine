@@ -1,8 +1,26 @@
+:root {
+  --brand-blue: #003399; /* Matches your Logo Blue */
+  --brand-gold: #ffbd59; /* Matches your Logo Yellow */
+  --brand-dark: #0a1525; /* Very dark blue for backgrounds */
+  --glass-bg: rgba(0, 51, 153, 0.75); /* Blue Glass effect */
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 /* --- MAIN LAYOUT --- */
@@ -10,91 +28,115 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  
+  /* UPDATED: Dark Blue Cinema Background */
   background:
     linear-gradient(
-      120deg,
-      rgba(15, 15, 15, 0.8) 0%,
-      rgba(27, 27, 27, 0.8) 50%,
-      rgba(11, 11, 11, 0.8) 100%
+      135deg,
+      rgba(0, 20, 60, 0.9) 0%,
+      rgba(0, 10, 30, 0.95) 100%
     ),
     url('https://raw.githubusercontent.com/AlejandroSorbito/BookBuster/main/assets/images/bg.jpg');
+    
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: #fff;
   text-align: center;
+  
+  /* Apply Animation to the whole page load */
+  animation: fadeIn 0.8s ease-out;
 }
 
-/* --- NAVIGATION --- */
+/* --- NAVIGATION WITH LOGO --- */
 nav {
   position: absolute;
-  top: 20px;
-  right: 40px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px 40px;
   display: flex;
-  gap: 14px;
-  background-color: rgba(0, 0, 0, 0.45);
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  backdrop-filter: blur(6px);
+  justify-content: space-between; /* Logo left, Links right */
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  z-index: 100;
 }
+
+.logo-container img {
+  height: 50px; /* Adjust size of your logo */
+  width: auto;
+  transition: transform 0.3s;
+}
+
+.logo-container img:hover {
+  transform: scale(1.05); /* Slight zoom on hover */
+}
+
+.nav-links {
+  display: flex;
+  gap: 15px;
+  background-color: rgba(0, 51, 153, 0.3); /* Subtle Blue tint */
+  padding: 8px 20px;
+  border-radius: 30px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 nav a {
-  color: #f0f0f0;
+  color: #e0e0e0;
   text-decoration: none;
   font-weight: 600;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: color 0.2s, background 0.2s, transform 0.2s;
+  padding: 8px 12px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  font-size: 15px;
 }
+
 nav a:hover {
-  color: #000;
-  background: #ffbd59;
-  transform: translateY(-2px);
+  color: #fff;
+  background: var(--brand-blue);
+  box-shadow: 0 0 10px rgba(0, 51, 153, 0.5);
 }
+
 nav a.login-link {
-  background: #ffd700;
+  background: var(--brand-gold);
+  color: #002266; /* Dark blue text on gold button */
+  font-weight: 800;
+}
+
+nav a.login-link:hover {
+  background: #ffdb70;
   color: #000;
-  font-weight: 700;
-  padding: 8px 14px;
+  box-shadow: 0 0 15px rgba(255, 189, 89, 0.6);
 }
 
 /* --- HERO SECTION --- */
 .hero {
   max-width: 900px;
-  margin: 200px auto 60px;
-  background: rgba(10, 10, 10, 0.6);
+  margin: 180px auto 60px;
+  background: rgba(0, 30, 80, 0.6); /* Dark Blue Glass */
   padding: 48px 28px;
-  border-radius: 14px;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-}
-h1 {
-  font-size: 44px;
-  color: #ffbd59;
-  margin-bottom: 12px;
-  letter-spacing: 1px;
-}
-p.lead {
-  font-size: 18px;
-  color: #ddd;
-  margin-bottom: 18px;
-}
-a.btn {
-  text-decoration: none;
-  background: #ffbd59;
-  color: #000;
-  padding: 12px 26px;
-  border-radius: 8px;
-  font-weight: 700;
-  display: inline-block;
-  transition: transform 0.15s, background 0.15s;
-}
-a.btn:hover {
-  transform: scale(1.03);
-  background: #e6b800;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideIn 1s ease-out;
 }
 
-/* --- GENERAL FEATURES (Home, About, FAQs) --- */
+h1 {
+  font-size: 48px;
+  color: var(--brand-gold);
+  margin-bottom: 12px;
+  text-shadow: 0 2px 10px rgba(255, 189, 89, 0.2);
+}
+
+p.lead {
+  font-size: 18px;
+  color: #ccc;
+  margin-bottom: 24px;
+}
+
+/* --- GENERAL FEATURES --- */
 .features {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -108,96 +150,119 @@ a.btn:hover {
 }
 
 .feature {
-  background: #111;
+  background: linear-gradient(145deg, #0b1a30, #050e1a);
   padding: 24px;
-  border-radius: 10px;
-  color: #eee;
-  transition: transform 0.18s, box-shadow 0.18s;
-}
-
-/* --- FORMS --- */
-
-/* 1. Dark Glass Box Container */
-form {
-  background: rgba(0, 0, 0, 0.75); /* Dark see-through background */
-  padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); 
-  backdrop-filter: blur(8px); /* Blurs the wallpaper behind it */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  max-width: 500px; /* Prevents it from getting too wide */
-  margin: 0 auto;   /* Centers the form */
+  color: #eee;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* 2. Input Boxes (The Text Fields) */
-form input,
-form textarea {
+.feature:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  border-color: var(--brand-blue);
+}
+
+.feature i {
+  font-size: 38px;
+  margin-bottom: 15px;
+  color: var(--brand-gold);
+  display: block;
+}
+
+.feature h3 {
+  margin: 8px 0;
+  color: #fff;
+  font-size: 20px;
+}
+
+/* --- MOVIE PAGE SPECIFIC --- */
+#movies-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 30px !important;
+}
+
+#movies-container .feature {
+  width: 260px !important;
+  flex: 0 0 auto !important;
+  padding: 15px !important;
+  background: #000; /* Posters look best on black */
+}
+
+#movies-container .feature i img {
   width: 100%;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background-color: #222 !important; /* Force Dark Grey */
-  color: #fff !important; /* Force White Text */
+  height: auto;
+  border-radius: 8px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+#movies-container .feature:hover i img {
+  transform: scale(1.03); /* Zoom poster slightly on hover */
+}
+
+/* --- FORMS (BLUE GLASS THEME) --- */
+form {
+  background: var(--glass-bg);
+  padding: 35px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  max-width: 500px;
+  margin: 0 auto;
+  animation: slideIn 0.8s ease-out;
+}
+
+form input, form textarea, form select {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  color: #fff !important;
   font-size: 15px;
-  margin-top: 6px; 
-  margin-bottom: 16px; 
+  margin-top: 6px;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+form input:focus, form textarea:focus, form select:focus {
+  border-color: var(--brand-gold);
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  box-shadow: 0 0 15px rgba(255, 189, 89, 0.2);
   outline: none;
 }
 
-/* 3. Glow Effect when clicking */
-form input:focus,
-form textarea:focus {
-  border-color: #ffbd59; 
-  background-color: #000 !important; 
-  box-shadow: 0 0 8px rgba(255, 189, 89, 0.3);
-}
-
-/* 4. Labels (The text like "Email") */
-form label {
-  color: #ffbd59; /* Gold */
-  font-weight: bold;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* 5. Buttons inside forms */
 form button {
   width: 100%;
-  background: #ffbd59;
-  color: #000;
+  background: var(--brand-gold);
+  color: #002266;
   border: none;
-  padding: 12px;
+  padding: 14px;
   border-radius: 8px;
   font-weight: 800;
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 10px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 form button:hover {
-  background: #ffdb70;
-  transform: translateY(-2px);
+  background: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 20px rgba(255, 189, 89, 0.4);
 }
 
-/* Error Message Red Box */
-#errorMessage {
-  color: #ff6b6b; 
-  background: rgba(255, 107, 107, 0.1); 
-  padding: 8px;
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* --- BOOKING SYSTEM (Seat Map & Box Office) --- */
-
+/* --- BOOKING SYSTEM --- */
 .seat-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr); /* 8 seats per row */
+  grid-template-columns: repeat(8, 1fr);
   gap: 8px;
   margin: 20px 0;
   max-width: 400px;
@@ -205,67 +270,40 @@ form button:hover {
 
 .seat {
   height: 35px;
-  background: #444;
+  background: rgba(255,255,255,0.1);
   border-radius: 6px;
-  border: 1px solid #555;
+  border: 1px solid rgba(255,255,255,0.2);
   cursor: pointer;
-  transition: 0.2s;
-  
-  /* Text styling for "A1", "A2" */
   color: #aaa;
   font-size: 11px;
   font-weight: bold;
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: 0.2s;
 }
 
-.seat:hover {
-  background: #666;
-  color: #fff;
+.seat:hover { background: var(--brand-blue); color: #fff; border-color: #fff; }
+.seat.selected { background: var(--brand-gold); color: #000; border-color: #fff; box-shadow: 0 0 15px var(--brand-gold); }
+.seat.taken { background: #d32f2f; opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+.booking-row {
+  background: rgba(0, 30, 80, 0.6);
+  padding: 15px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #eee;
+  border-radius: 8px;
 }
 
-/* Selected State (Gold) */
-.seat.selected { 
-  background: #ffbd59; 
-  color: #000; 
-  border-color: #e6a800;
-  box-shadow: 0 0 8px rgba(255, 189, 89, 0.4); 
-}
-
-/* TAKEN STATE (Red & Locked) */
-.seat.taken {
-  background: #d32f2f; /* Red */
-  color: #ffcccc;
-  border-color: #b71c1c;
-  cursor: not-allowed;
-  pointer-events: none; /* Make it unclickable */
-  opacity: 0.6;
-}
-
-.screen {
-  width: 100%;
-  height: 8px;
-  background: #ddd;
-  border-radius: 4px;
-  margin-bottom: 25px;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-  text-align: center;
-  line-height: 8px;
-  font-size: 9px;
-  color: #000;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.booking-row { 
-  background: rgba(0, 0, 0, 0.6); /* Glass effect */
-  padding: 15px; 
-  margin-bottom: 5px; 
-  border-bottom: 1px solid #333; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  color: #ddd;
-  border-radius: 6px;
+/* --- FOOTER --- */
+footer {
+  margin-top: auto;
+  background: #050e1a;
+  padding: 20px 6%;
+  color: #888;
+  border-top: 1px solid #111;
 }
