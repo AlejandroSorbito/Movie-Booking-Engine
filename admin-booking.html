@@ -4,57 +4,6 @@
   <meta charset="utf-8" />
   <title>Manage Bookings | BookBuster</title>
   <link rel="stylesheet" href="CSS/style.css" />
-  <style>
-      /* --- SEAT MAP STYLES --- */
-      .seat-grid {
-          display: grid;
-          grid-template-columns: repeat(8, 1fr); /* 8 seats per row */
-          gap: 8px;
-          margin: 20px 0;
-          max-width: 400px;
-      }
-      .seat {
-          height: 35px;
-          background: #444;
-          border-radius: 6px;
-          border: 1px solid #555;
-          cursor: pointer;
-          transition: 0.2s;
-          
-          /* TEXT STYLES (New) */
-          color: #aaa;
-          font-size: 11px;
-          font-weight: bold;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-      }
-      .seat:hover { background: #666; color: #fff; }
-      
-      /* Selected State (Gold) */
-      .seat.selected { 
-          background: #ffbd59; 
-          color: #000; 
-          border-color: #e6a800;
-          box-shadow: 0 0 8px rgba(255, 189, 89, 0.4); 
-      }
-
-      .screen {
-          width: 100%;
-          height: 8px;
-          background: #ddd;
-          border-radius: 4px;
-          margin-bottom: 25px;
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-          text-align: center;
-          line-height: 8px;
-          font-size: 9px;
-          color: #000;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-      }
-      .booking-row { background: #1a1a1a; padding: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ddd; }
-  </style>
 </head>
 <body>
 
@@ -62,13 +11,13 @@
     <a href="index.html">Home</a>
     <a href="dashboard.html">Movies</a>
     <a href="admin-schedule.html">Schedule</a>
-    <a href="admin-bookings.html" class="active">Bookings</a>
+    <a href="admin-booking.html" class="active">Bookings</a>
     <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
   </nav>
 
   <div class="hero" style="margin-top: 100px;">
     <h1>Box Office</h1>
-    <p class="lead">Select a showtime and click specific seats.</p>
+    <p class="lead">Real-time Seat Reservation System.</p>
   </div>
 
   <section class="features">
@@ -87,15 +36,19 @@
             </select><br>
 
             <input type="hidden" id="seatCount" value="0">
-            <input type="hidden" id="seatLabels" value=""> <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333;">
+            <input type="hidden" id="seatLabels" value="">
+            
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333;">
                 <div class="screen">SCREEN</div>
-                <div id="seatMap" class="seat-grid">
-                    </div>
-                <p id="seatDisplay" style="color: #ffbd59; font-weight: bold; margin-top:15px; min-height: 20px;">No seats selected</p>
+                
+                <p id="mapLoading" style="display:none; color:#ffbd59; font-size:12px;">Checking availability...</p>
+                
+                <div id="seatMap" class="seat-grid"></div>
+                <p id="seatDisplay" style="color: #ffbd59; font-weight: bold; margin-top:15px; min-height: 20px;">Select a Showtime first</p>
             </div>
             <br>
 
-            <button type="submit">Confirm Booking</button>
+            <button type="submit" id="submitBtn" disabled>Confirm Booking</button>
         </form>
 
         <div style="flex: 1; min-width: 300px; text-align: left;">
@@ -110,28 +63,30 @@
 
   <script type="module">
     import { db, auth } from "./bookbuster.js";
-    import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // 1. Generate LABELED Chairs (A1, A2...)
+    // 1. Generate Chairs
     const seatMap = document.getElementById('seatMap');
     const seatDisplay = document.getElementById('seatDisplay');
     const seatCountInput = document.getElementById('seatCount');
-    const seatLabelsInput = document.getElementById('seatLabels'); // Hidden field for DB
+    const seatLabelsInput = document.getElementById('seatLabels');
+    const submitBtn = document.getElementById('submitBtn');
 
-    const rows = ['A', 'B', 'C', 'D']; // 4 Rows
-    const seatsPerRow = 8;             // 8 Cols
+    const rows = ['A', 'B', 'C', 'D']; 
+    const seatsPerRow = 8;             
 
     rows.forEach(rowLetter => {
         for (let i = 1; i <= seatsPerRow; i++) {
-            const seatLabel = rowLetter + i; // e.g., "A1"
+            const seatLabel = rowLetter + i; 
             
             const seat = document.createElement('div');
             seat.className = 'seat';
-            seat.textContent = seatLabel; // Show "A1" on the chair
-            seat.dataset.label = seatLabel; // Store it for logic
+            seat.textContent = seatLabel;
+            seat.dataset.label = seatLabel;
             
             seat.addEventListener('click', () => {
+                if (seat.classList.contains('taken')) return;
                 seat.classList.toggle('selected');
                 updateSelection();
             });
@@ -142,21 +97,69 @@
     function updateSelection() {
         const selectedEls = document.querySelectorAll('.seat.selected');
         const count = selectedEls.length;
-        
-        // Create a list of names like ["A1", "A2"]
         const labels = Array.from(selectedEls).map(el => el.dataset.label);
         
         seatCountInput.value = count;
-        seatLabelsInput.value = labels.join(", "); // Store string "A1, A2"
+        seatLabelsInput.value = labels.join(", ");
 
         if (count > 0) {
             seatDisplay.textContent = `Selected: ${labels.join(", ")}`;
+            submitBtn.disabled = false;
         } else {
-            seatDisplay.textContent = "No seats selected";
+            seatDisplay.textContent = "Please select seats";
+            submitBtn.disabled = true;
         }
     }
 
-    // 2. Auth Check & Load Data
+    // 2. Load Occupied Seats
+    async function checkAvailability(showtimeString) {
+        document.querySelectorAll('.seat').forEach(s => {
+            s.classList.remove('taken', 'selected');
+        });
+        seatDisplay.textContent = "Checking availability...";
+        document.getElementById('mapLoading').style.display = 'block';
+
+        try {
+            const q = query(collection(db, "bookings"), where("details", "==", showtimeString));
+            const snapshot = await getDocs(q);
+            
+            let takenSeats = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.seatNumbers) {
+                    const seats = data.seatNumbers.split(', ');
+                    takenSeats.push(...seats);
+                }
+            });
+
+            document.querySelectorAll('.seat').forEach(seat => {
+                if (takenSeats.includes(seat.dataset.label)) {
+                    seat.classList.add('taken');
+                }
+            });
+
+            seatDisplay.textContent = "Select seats";
+
+        } catch (error) {
+            console.error("Error checking seats:", error);
+            seatDisplay.textContent = "Error loading map";
+        } finally {
+            document.getElementById('mapLoading').style.display = 'none';
+        }
+    }
+
+    document.getElementById('showtimeSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val) {
+            checkAvailability(val);
+        } else {
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('taken', 'selected'));
+            submitBtn.disabled = true;
+        }
+    });
+
+    // 3. Auth & Init
     onAuthStateChanged(auth, (user) => {
       if (!user) {
           localStorage.removeItem('userLoggedIn');
@@ -167,18 +170,13 @@
       }
     });
 
-    // 3. Load Showtimes
+    // 4. Load Showtimes
     async function loadShowtimes() {
         const select = document.getElementById('showtimeSelect');
         try {
             const q = query(collection(db, "showtimes"), orderBy("datetime", "asc"));
             const snapshot = await getDocs(q);
             
-            if (snapshot.empty) {
-                select.innerHTML = '<option value="">No upcoming shows found.</option>';
-                return;
-            }
-
             select.innerHTML = '<option value="">-- Choose Showtime --</option>';
             snapshot.forEach(doc => {
                 const s = doc.data();
@@ -190,49 +188,37 @@
             });
         } catch (error) {
             console.error(error);
-            select.innerHTML = '<option value="">Error loading list</option>';
         }
     }
 
-    // 4. Submit Booking (Now with Seat Numbers!)
+    // 5. Submit Booking
     document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('custName').value;
         const details = document.getElementById('showtimeSelect').value;
         const count = document.getElementById('seatCount').value;
-        const specificSeats = document.getElementById('seatLabels').value; // Get "A1, A2"
-
-        if (count == 0) {
-            alert("Please select at least one seat!");
-            return;
-        }
-        if (!details) {
-            alert("Please select a showtime.");
-            return;
-        }
+        const specificSeats = document.getElementById('seatLabels').value;
 
         try {
             await addDoc(collection(db, "bookings"), {
                 customer: name,
-                details: details,
+                details: details, 
                 seatCount: count,
-                seatNumbers: specificSeats, // Saving "A1, A2" to DB
+                seatNumbers: specificSeats, 
                 timestamp: new Date()
             });
-            alert("Ticket Sold for seats: " + specificSeats);
+            alert("Ticket Sold!");
             
-            // Reset form
             document.getElementById('addBookingForm').reset();
-            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
             updateSelection();
-            
+            checkAvailability(details); 
             loadBookings();
         } catch (error) {
             alert("Error: " + error.message);
         }
     });
 
-    // 5. Load Recent Bookings
+    // 6. Load Recent List
     async function loadBookings() {
         const list = document.getElementById('bookingList');
         try {
@@ -248,7 +234,7 @@
                     <div>
                         <strong style="color:#ffbd59;">${b.customer}</strong>
                         <div style="font-size:13px; color:#aaa;">${b.details}</div>
-                        <div style="font-size:12px; color:#4CAF50;">Seats: ${b.seatNumbers || "N/A"}</div>
+                        <div style="font-size:12px; color:#4CAF50;">Seats: ${b.seatNumbers}</div>
                     </div>
                     <div style="font-weight:bold;">${b.seatCount} Tix</div>
                 `;
