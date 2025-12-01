@@ -1,8 +1,12 @@
+/* =========================================
+   GLOBAL VARIABLES & RESET
+   ========================================= */
 :root {
-  --brand-blue: #003399; /* Matches your Logo Blue */
-  --brand-gold: #ffbd59; /* Matches your Logo Yellow */
-  --brand-dark: #0a1525; /* Very dark blue for backgrounds */
-  --glass-bg: rgba(0, 51, 153, 0.75); /* Blue Glass effect */
+  /* Brand Color Palette */
+  --brand-blue: #003399;
+  --brand-gold: #ffbd59;
+  --brand-dark: #0a1525;
+  --glass-bg: rgba(0, 51, 153, 0.75); /* Used for form backgrounds */
 }
 
 * {
@@ -12,24 +16,30 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* --- ANIMATIONS --- */
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+/* Fade in effect for page load */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Slide in effect for containers */
 @keyframes slideIn {
   from { transform: translateX(-20px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* --- MAIN LAYOUT --- */
+/* =========================================
+   MAIN BODY LAYOUT
+   ========================================= */
 body {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100vh; /* Ensures footer stays at bottom */
   
-  /* UPDATED: Dark Blue Cinema Background */
+  /* Background with gradient overlay */
   background:
     linear-gradient(
       135deg,
@@ -43,12 +53,12 @@ body {
   background-attachment: fixed;
   color: #fff;
   text-align: center;
-  
-  /* Apply Animation to the whole page load */
   animation: fadeIn 0.8s ease-out;
 }
 
-/* --- NAVIGATION WITH LOGO --- */
+/* =========================================
+   NAVIGATION BAR
+   ========================================= */
 nav {
   position: absolute;
   top: 0;
@@ -56,33 +66,44 @@ nav {
   width: 100%;
   padding: 15px 40px;
   display: flex;
-  justify-content: space-between; /* Logo left, Links right */
+  justify-content: space-between;
   align-items: center;
   background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
   z-index: 100;
 }
 
+/* Logo Styling */
+.logo-container a {
+  background: transparent !important;
+  padding: 0;
+  box-shadow: none !important;
+}
+
 .logo-container img {
-  height: 50px; /* Adjust size of your logo */
+  height: 60px;
   width: auto;
   transition: transform 0.3s;
+  display: block;
 }
 
 .logo-container img:hover {
-  transform: scale(1.05); /* Slight zoom on hover */
+  transform: scale(1.1);
+  cursor: pointer;
 }
 
+/* Navigation Links Container */
 .nav-links {
   display: flex;
   gap: 15px;
-  background-color: rgba(0, 51, 153, 0.3); /* Subtle Blue tint */
+  background-color: rgba(0, 51, 153, 0.3);
   padding: 8px 20px;
   border-radius: 30px;
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-nav a {
+/* Individual Link Styles */
+.nav-links a {
   color: #e0e0e0;
   text-decoration: none;
   font-weight: 600;
@@ -92,29 +113,32 @@ nav a {
   font-size: 15px;
 }
 
-nav a:hover {
+.nav-links a:hover {
   color: #fff;
   background: var(--brand-blue);
   box-shadow: 0 0 10px rgba(0, 51, 153, 0.5);
 }
 
-nav a.login-link {
+/* Highlighted Login/CTA Button */
+.nav-links a.login-link {
   background: var(--brand-gold);
-  color: #002266; /* Dark blue text on gold button */
+  color: #002266;
   font-weight: 800;
 }
 
-nav a.login-link:hover {
+.nav-links a.login-link:hover {
   background: #ffdb70;
   color: #000;
   box-shadow: 0 0 15px rgba(255, 189, 89, 0.6);
 }
 
-/* --- HERO SECTION --- */
+/* =========================================
+   HERO SECTION
+   ========================================= */
 .hero {
   max-width: 900px;
   margin: 180px auto 60px;
-  background: rgba(0, 30, 80, 0.6); /* Dark Blue Glass */
+  background: rgba(0, 30, 80, 0.6);
   padding: 48px 28px;
   border-radius: 16px;
   backdrop-filter: blur(10px);
@@ -136,7 +160,9 @@ p.lead {
   margin-bottom: 24px;
 }
 
-/* --- GENERAL FEATURES --- */
+/* =========================================
+   FEATURE CARDS (General Grid)
+   ========================================= */
 .features {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -177,7 +203,10 @@ p.lead {
   font-size: 20px;
 }
 
-/* --- MOVIE PAGE SPECIFIC --- */
+/* =========================================
+   MOVIE DISPLAY (Poster Grid)
+   ========================================= */
+/* Overrides standard features grid for movie posters */
 #movies-container {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -189,23 +218,25 @@ p.lead {
   width: 260px !important;
   flex: 0 0 auto !important;
   padding: 15px !important;
-  background: #000; /* Posters look best on black */
+  background: #000;
 }
 
 #movies-container .feature i img {
   width: 100%;
   height: auto;
   border-radius: 8px;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 2 / 3; /* Standard poster ratio */
   object-fit: cover;
   transition: transform 0.3s;
 }
 
 #movies-container .feature:hover i img {
-  transform: scale(1.03); /* Zoom poster slightly on hover */
+  transform: scale(1.03);
 }
 
-/* --- FORMS (BLUE GLASS THEME) --- */
+/* =========================================
+   FORMS & INPUTS
+   ========================================= */
 form {
   background: var(--glass-bg);
   padding: 35px;
@@ -238,6 +269,14 @@ form input:focus, form textarea:focus, form select:focus {
   outline: none;
 }
 
+form label {
+  color: var(--brand-gold);
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 form button {
   width: 100%;
   background: var(--brand-gold);
@@ -259,7 +298,20 @@ form button:hover {
   box-shadow: 0 5px 20px rgba(255, 189, 89, 0.4);
 }
 
-/* --- BOOKING SYSTEM --- */
+#errorMessage {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* =========================================
+   BOOKING SYSTEM (Seat Map)
+   ========================================= */
 .seat-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -287,6 +339,21 @@ form button:hover {
 .seat.selected { background: var(--brand-gold); color: #000; border-color: #fff; box-shadow: 0 0 15px var(--brand-gold); }
 .seat.taken { background: #d32f2f; opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
+.screen {
+  width: 100%;
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  margin-bottom: 25px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  text-align: center;
+  line-height: 8px;
+  font-size: 9px;
+  color: #000;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
 .booking-row {
   background: rgba(0, 30, 80, 0.6);
   padding: 15px;
@@ -299,11 +366,39 @@ form button:hover {
   border-radius: 8px;
 }
 
-/* --- FOOTER --- */
+/* =========================================
+   FOOTER
+   ========================================= */
 footer {
   margin-top: auto;
   background: #050e1a;
   padding: 20px 6%;
   color: #888;
   border-top: 1px solid #111;
+}
+
+/* =========================================
+   MEDIA QUERIES (Mobile Responsiveness)
+   ========================================= */
+@media (max-width: 600px) {
+  nav {
+    flex-direction: column;
+    padding: 15px;
+    background: rgba(0,0,0,0.9);
+  }
+  
+  .nav-links {
+    margin-top: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .hero {
+    margin: 160px 18px 30px;
+    padding: 28px;
+  }
+  
+  h1 {
+    font-size: 28px;
+  }
 }
