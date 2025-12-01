@@ -83,6 +83,14 @@
   </section>
 
   <script type="module">
+        // --- SECURITY: PREVENT "BACK" BUTTON AFTER LOGOUT ---
+window.addEventListener('pageshow', (event) => {
+    // If the page is loaded from the "Back" cache, force a reload
+    if (event.persisted) {
+        window.location.reload();
+    }
+})
+
     import { db, auth } from "./bookbuster.js";
     import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
