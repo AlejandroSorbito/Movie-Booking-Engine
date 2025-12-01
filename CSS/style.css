@@ -221,6 +221,11 @@ p.lead {
   background: #000;
 }
 
+#movies-container .feature p {
+  text-align: left;   /* Standard reading flow */
+  padding: 0 5px;     /* Slight padding */
+}
+
 #movies-container .feature i img {
   width: 100%;
   height: auto;
