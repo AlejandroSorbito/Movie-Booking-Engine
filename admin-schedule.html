@@ -4,25 +4,21 @@
   <meta charset="utf-8" />
   <title>Manage Schedule | BookBuster</title>
   <link rel="stylesheet" href="CSS/style.css" />
-  <style>
-      .schedule-item { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-      .tag { background: #ffbd59; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-  </style>
 </head>
 <body>
 
-<nav>
+  <nav>
     <div class="logo-container">
       <a href="index.html">
-        <img src="assets/images/Banner.png" alt="BookBuster Logo">
+        <img src="assets/images/logo.png" alt="BookBuster Logo">
       </a>
     </div>
     <div class="nav-links">
       <a href="index.html">Home</a>
-      <a href="dashboard.html">Movies</a> <!-- Points to Admin Dashboard -->
-      <a href="admin-schedule.html">Schedule</a>
+      <a href="dashboard.html">Movies</a>
+      <a href="admin-schedule.html" class="active">Schedule</a>
       <a href="admin-booking.html">Bookings</a>
-      <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
+      <a href="#" id="logoutBtn" class="btn-delete">Logout</a>
     </div>
   </nav>
 
@@ -32,19 +28,31 @@
   </div>
 
   <section class="features">
+    
+    <div class="admin-panel-box">
+        <h4 class="text-gold">Manage Cinema Halls</h4>
+        
+        <div id="cinemaList" class="cinema-tag-list">
+            <span class="text-muted">Loading cinemas...</span>
+        </div>
+
+        <form id="addCinemaForm" class="inline-form">
+            <input type="text" id="newCinemaName" placeholder="e.g. Cinema 5" required>
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
     <form id="addShowtimeForm">
-      <h3 style="color:white; margin-bottom:15px;">Add New Showtime</h3>
+      <h3 class="text-white">Add New Showtime</h3>
       
       <label>Select Movie:</label><br>
-      <select id="movieSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
+      <select id="movieSelect" required class="form-select">
           <option value="">Loading movies...</option>
       </select><br>
 
       <label>Cinema Hall:</label><br>
-      <select id="cinemaSelect" required style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; margin-bottom:15px;">
-          <option value="Cinema 1">Cinema 1</option>
-          <option value="Cinema 2">Cinema 2</option>
-          <option value="IMAX">IMAX Hall</option>
+      <select id="cinemaSelect" required class="form-select">
+          <option value="">-- Select a Cinema --</option>
       </select><br>
 
       <label>Date & Time:</label><br>
@@ -53,51 +61,119 @@
       <button type="submit" id="submitBtn">Add to Schedule</button>
     </form>
 
-    <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
+    <hr class="section-divider">
 
     <div style="max-width: 600px; margin: 0 auto; text-align: left;">
-        <h3 style="color:white; margin-bottom:15px;">Upcoming Showtimes</h3>
+        <h3 class="text-white">Upcoming Showtimes</h3>
         <div id="scheduleList">
-            <p style="color:#777;">Loading schedule...</p>
+            <p class="text-muted">Loading schedule...</p>
         </div>
     </div>
   </section>
 
-<script type="module">
+  <script type="module">
     import { db, auth } from "./bookbuster.js";
     import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    // Auth Check
+    // 1. Security & Init
+    // Prevents back button access after logout
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) window.location.reload();
+    });
+    window.addEventListener('beforeunload', () => {
+        document.body.style.display = 'none';
+    });
+
     onAuthStateChanged(auth, (user) => {
       if (!user) {
           localStorage.removeItem('userLoggedIn');
           window.location.href = "login.html";
       } else {
           loadMoviesDropdown();
+          loadCinemas(); 
           loadSchedule();
       }
     });
 
-    // 1. Load Movies Dropdown
-    async function loadMoviesDropdown() {
-        const select = document.getElementById('movieSelect');
-        console.log("Loading movies..."); // check console
+    // 2. Manage Cinemas Logic
+    document.getElementById('addCinemaForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('newCinemaName').value.trim();
+        if(!name) return;
 
         try {
-            // Get movies
+            await addDoc(collection(db, "cinemas"), {
+                name: name,
+                createdAt: new Date()
+            });
+            document.getElementById('newCinemaName').value = ""; 
+            loadCinemas(); 
+        } catch (error) {
+            alert("Error adding cinema: " + error.message);
+        }
+    });
+
+    async function loadCinemas() {
+        const listDiv = document.getElementById('cinemaList');
+        const select = document.getElementById('cinemaSelect');
+        
+        listDiv.innerHTML = ""; 
+        select.innerHTML = '<option value="">-- Select a Cinema --</option>'; 
+
+        try {
+            const q = query(collection(db, "cinemas"), orderBy("name"));
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                listDiv.innerHTML = "<span class='text-muted'>No cinemas added yet. Add one below!</span>";
+                return;
+            }
+
+            snapshot.forEach(docSnap => {
+                const c = docSnap.data();
+                
+                // Add to Tag List
+                const tag = document.createElement('div');
+                tag.className = 'cinema-tag';
+                tag.innerHTML = `
+                    ${c.name} 
+                    <button onclick="deleteCinema('${docSnap.id}')" title="Delete">x</button>
+                `;
+                listDiv.appendChild(tag);
+
+                // Add to Dropdown
+                const option = document.createElement('option');
+                option.value = c.name;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error("Error loading cinemas:", error);
+        }
+    }
+
+    window.deleteCinema = async (id) => {
+        if(confirm("Remove this cinema from the list?")) {
+            await deleteDoc(doc(db, "cinemas", id));
+            loadCinemas();
+        }
+    }
+
+    // 3. Schedule Logic
+    async function loadMoviesDropdown() {
+        const select = document.getElementById('movieSelect');
+        try {
             const q = query(collection(db, "movies"), orderBy("title"));
             const snapshot = await getDocs(q);
             
-            // CHECK: Is the database actually empty?
             if (snapshot.empty) {
-                console.warn("No movies found in 'movies' collection.");
                 select.innerHTML = '<option value="">Database is empty! Add a movie first.</option>';
                 return;
             }
 
             select.innerHTML = '<option value="">-- Choose a Movie --</option>';
-            
             snapshot.forEach(doc => {
                 const movie = doc.data();
                 const option = document.createElement('option');
@@ -105,23 +181,19 @@
                 option.textContent = movie.title;
                 select.appendChild(option);
             });
-
         } catch (error) {
             console.error("Error loading movies:", error);
-            // If this alert pops up, it's a permission/network issue
-            alert("Error connecting to DB: " + error.message);
         }
     }
 
-    // 2. Add Showtime
     document.getElementById('addShowtimeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const movieTitle = document.getElementById('movieSelect').value;
         const cinema = document.getElementById('cinemaSelect').value;
         const dateTime = document.getElementById('showTime').value;
 
-        if (!movieTitle) {
-            alert("Please select a movie.");
+        if (!movieTitle || !cinema) {
+            alert("Please select both a movie and a cinema.");
             return;
         }
 
@@ -139,7 +211,6 @@
         }
     });
 
-    // 3. Load Schedule
     async function loadSchedule() {
         const list = document.getElementById('scheduleList');
         try {
@@ -157,9 +228,9 @@
                 item.innerHTML = `
                     <div>
                         <h4 style="color:#fff; margin-bottom:4px;">${show.movieTitle}</h4>
-                        <span class="tag">${show.cinema}</span> <span style="color:#aaa; font-size:14px; margin-left:8px;">${dateStr}</span>
+                        <span class="tag">${show.cinema}</span> <span class="text-muted" style="margin-left:8px;">${dateStr}</span>
                     </div>
-                    <button onclick="deleteShowtime('${docSnap.id}')" style="background:#f44336; padding:5px 10px; font-size:12px; width:auto;">X</button>
+                    <button onclick="deleteShowtime('${docSnap.id}')" class="btn-delete">X</button>
                 `;
                 list.appendChild(item);
             });
