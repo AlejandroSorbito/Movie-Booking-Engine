@@ -7,7 +7,7 @@
 </head>
 <body>
 
-<nav>
+  <nav>
     <div class="logo-container">
       <a href="index.html">
         <img src="assets/images/Banner.png" alt="BookBuster Logo">
@@ -15,9 +15,9 @@
     </div>
     <div class="nav-links">
       <a href="index.html">Home</a>
-      <a href="dashboard.html">Movies</a> <!-- Points to Admin Dashboard -->
+      <a href="dashboard.html">Movies</a>
       <a href="admin-schedule.html">Schedule</a>
-      <a href="admin-booking.html">Bookings</a>
+      <a href="admin-booking.html" class="active">Bookings</a>
       <a href="#" id="logoutBtn" style="background-color: #ff4d4d; color: white;">Logout</a>
     </div>
   </nav>
@@ -44,6 +44,7 @@
 
             <input type="hidden" id="seatCount" value="0">
             <input type="hidden" id="seatLabels" value="">
+            <input type="hidden" id="showtimeDetailsText" value="">
             
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333;">
                 <div class="screen">SCREEN</div>
@@ -70,7 +71,7 @@
 
   <script type="module">
     import { db, auth } from "./bookbuster.js";
-    import { collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
     // 1. Generate Chairs
@@ -118,8 +119,9 @@
         }
     }
 
-    // 2. Load Occupied Seats
-    async function checkAvailability(showtimeString) {
+    // 2. Load Occupied Seats (Using IDs now!)
+    async function checkAvailability(showtimeId) {
+        // Reset Map
         document.querySelectorAll('.seat').forEach(s => {
             s.classList.remove('taken', 'selected');
         });
@@ -127,7 +129,8 @@
         document.getElementById('mapLoading').style.display = 'block';
 
         try {
-            const q = query(collection(db, "bookings"), where("details", "==", showtimeString));
+            // FIXED: Query by 'showtimeId' (Stable) instead of 'details' (Unstable text)
+            const q = query(collection(db, "bookings"), where("showtimeId", "==", showtimeId));
             const snapshot = await getDocs(q);
             
             let takenSeats = [];
@@ -140,6 +143,7 @@
                 }
             });
 
+            // Mark taken seats
             document.querySelectorAll('.seat').forEach(seat => {
                 if (takenSeats.includes(seat.dataset.label)) {
                     seat.classList.add('taken');
@@ -156,11 +160,17 @@
         }
     }
 
+    // Listener: Handle Dropdown Change
     document.getElementById('showtimeSelect').addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (val) {
-            checkAvailability(val);
+        const id = e.target.value;
+        const text = e.target.options[e.target.selectedIndex].text;
+        
+        document.getElementById('showtimeDetailsText').value = text;
+
+        if (id) {
+            checkAvailability(id);
         } else {
+            // Clear map if they select the default option
             document.querySelectorAll('.seat').forEach(s => s.classList.remove('taken', 'selected'));
             submitBtn.disabled = true;
         }
@@ -177,7 +187,7 @@
       }
     });
 
-    // 4. Load Showtimes
+    // 4. Load Showtimes (Store ID in value)
     async function loadShowtimes() {
         const select = document.getElementById('showtimeSelect');
         try {
@@ -185,12 +195,14 @@
             const snapshot = await getDocs(q);
             
             select.innerHTML = '<option value="">-- Choose Showtime --</option>';
-            snapshot.forEach(doc => {
-                const s = doc.data();
+            snapshot.forEach(docSnap => {
+                const s = docSnap.data();
+                const id = docSnap.id; // Get the unique ID
                 const date = new Date(s.datetime).toLocaleString();
+                
                 const option = document.createElement('option');
-                option.value = `${s.movieTitle} | ${date} | ${s.cinema}`;
-                option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`;
+                option.value = id; // Store ID (Stable)
+                option.textContent = `${s.movieTitle} - ${date} (${s.cinema})`; // Show Text (Readable)
                 select.appendChild(option);
             });
         } catch (error) {
@@ -202,14 +214,16 @@
     document.getElementById('addBookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('custName').value;
-        const details = document.getElementById('showtimeSelect').value;
+        const showtimeId = document.getElementById('showtimeSelect').value;
+        const showtimeText = document.getElementById('showtimeDetailsText').value; // Saved for display
         const count = document.getElementById('seatCount').value;
         const specificSeats = document.getElementById('seatLabels').value;
 
         try {
             await addDoc(collection(db, "bookings"), {
                 customer: name,
-                details: details, 
+                showtimeId: showtimeId, // The Link!
+                details: showtimeText,  // Just for reading
                 seatCount: count,
                 seatNumbers: specificSeats, 
                 timestamp: new Date()
@@ -218,7 +232,7 @@
             
             document.getElementById('addBookingForm').reset();
             updateSelection();
-            checkAvailability(details); 
+            checkAvailability(showtimeId); 
             loadBookings();
         } catch (error) {
             alert("Error: " + error.message);
@@ -233,22 +247,47 @@
             const snapshot = await getDocs(q);
 
             list.innerHTML = "";
-            snapshot.forEach(doc => {
-                const b = doc.data();
+            snapshot.forEach(docSnap => {
+                const b = docSnap.data();
+                const id = docSnap.id; 
+
                 const div = document.createElement('div');
                 div.className = 'booking-row';
                 div.innerHTML = `
-                    <div>
+                    <div style="flex: 1;">
                         <strong style="color:#ffbd59;">${b.customer}</strong>
                         <div style="font-size:13px; color:#aaa;">${b.details}</div>
                         <div style="font-size:12px; color:#4CAF50;">Seats: ${b.seatNumbers}</div>
                     </div>
-                    <div style="font-weight:bold;">${b.seatCount} Tix</div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold; margin-bottom:5px;">${b.seatCount} Tix</div>
+                        <button onclick="deleteTicket('${id}', '${b.showtimeId}')" style="background:#f44336; padding:5px 8px; font-size:11px; width:auto; border-radius:4px; border:none; color:white; cursor:pointer;">Refund</button>
+                    </div>
                 `;
                 list.appendChild(div);
             });
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    // 7. Delete Logic
+    window.deleteTicket = async (bookingId, showtimeId) => {
+        if(confirm("Refund this ticket?")) {
+            try {
+                await deleteDoc(doc(db, "bookings", bookingId));
+                
+                loadBookings(); // Refresh list
+
+                // If map is currently showing THIS showtime, refresh the map too
+                const currentSelection = document.getElementById('showtimeSelect').value;
+                if (currentSelection === showtimeId) {
+                    checkAvailability(currentSelection);
+                }
+                
+            } catch (error) {
+                alert("Error deleting: " + error.message);
+            }
         }
     }
 
